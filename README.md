@@ -15,6 +15,18 @@ Agente de voz con IA que contesta el teléfono de restaurantes latinos, toma ped
 | Platos del día | — | Platos que solo se venden ciertos días (ej. nacatamal fin de semana) |
 | Hablar con persona | Sí | Sí, por voz o marcando **0** en cualquier momento |
 
+## Las 3 pantallas del panel
+
+Con `npm start` corriendo, abre http://localhost:3000
+
+- **Pedidos**: estadísticas, pedidos y cada llamada con la conversación completa.
+- **Menú**: el dueño edita platos, precios, opciones, horario y teléfonos sin tocar código. Botón **"Se acabó"** para que la IA deje de ofrecer un plato. Y **"Leer menú con IA"**: subes fotos o PDF del menú y se arma solo (revisas y guardas).
+- **Cocina**: para la tablet de la cocina. Columnas Nuevos / Preparando / Listos, sonido cuando entra un pedido (dale primero a "Activar sonido"), botón para imprimir el ticket y lista rápida de "¿Se acabó algo?".
+
+Los cambios del menú se guardan en `data/restaurantes/` y la IA los usa desde la siguiente llamada. Los archivos de `src/restaurants/` son solo la plantilla inicial.
+
+> Antes de publicar el servidor en internet, pon un `DASHBOARD_TOKEN` en `.env`. Sin token, cualquiera con el link puede editar el menú.
+
 ## Estructura
 
 ```
@@ -27,9 +39,11 @@ src/
   time.js          Horarios y hora local del restaurante
   store.js         Guarda pedidos y llamadas en /data (JSON)
   notify.js        Envía SMS (o los imprime si no hay Twilio)
+  validate.js      Revisa el menú antes de guardarlo
+  menuImport.js    Lee el menú desde fotos o PDF con Claude
   simulator.js     Prueba el agente escribiendo, sin teléfono
   restaurants/     Un archivo JSON por restaurante (menú, horario, teléfonos)
-public/index.html  Panel del dueño
+public/           Panel: index.html (pedidos), menu.html, cocina.html
 test/              Pruebas automáticas
 ```
 
@@ -102,7 +116,7 @@ El restaurante **no cambia su número**. Le pides a su compañía de teléfono (
 
 ## Agregar un restaurante nuevo
 
-Copia `src/restaurants/el-rincon-latino.json`, cámbiale el `id`, el nombre, el menú, el horario y los teléfonos. Reinicia el servidor. Cada número de Twilio apunta a su restaurante con `twilio_number`.
+Copia `src/restaurants/el-rincon-latino.json` con otro nombre, cámbiale el `id` y reinicia el servidor. Después edita todo lo demás desde la pantalla **Menú** (o carga su menú desde una foto). Cada número de Twilio apunta a su restaurante con el campo "Número de Twilio".
 
 ## Costo por llamada (aproximado)
 

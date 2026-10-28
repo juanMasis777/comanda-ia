@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Comanda IA · Cocina</title>
+<link rel="stylesheet" href="/common.css" />
+<style>
+  main { max-width: none; }
+  .tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+  .clock { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; margin-left: auto; }
+  .board { display: grid; grid-template-columns: repeat(3, minmax(260px, 1fr)); gap: 14px; }
+  @media (max-width: 860px) { .board { grid-template-columns: 1fr; } }
+  .col h2 { margin: 0 0 10px; display: flex; justify-content: space-between; align-items: center; font-size: 18px; }
+  .col h2 .count { font-size: 14px; color: var(--muted); }
+  .col.nuevo h2 { color: var(--info); } .col.preparando h2 { color: var(--warn); } .col.listo h2 { color: var(--ok); }
+  .ticket { margin-bottom: 12px; border-top: 6px solid var(--info); }
+  .col.preparando .ticket { border-top-color: var(--warn); } .col.listo .ticket { border-top-color: var(--ok); }
+  .ticket.flash { animation: flash 1s ease-in-out 4; }
+  @keyframes flash { 50% { background: var(--accent-soft); } }
+  .ticket .head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .ticket .num { font-size: 26px; font-weight: 800; }
+  .ticket .who { font-size: 17px; font-weight: 600; }
+  .ticket .when { color: var(--muted); }
+  .ticket .late { color: var(--danger); font-weight: 700; }
+  .ticket ul { list-style: none; padding: 0; margin: 12px 0; font-size: 19px; }
+  .ticket li { padding: 6px 0; border-bottom: 1px dashed var(--line); }
+  .ticket li:last-child { border-bottom: 0; }
+  .ticket .opt { display: block; font-size: 15px; color: var(--muted); }
+  .ticket .nota { display: block; font-size: 15px; color: var(--accent); font-weight: 700; }
+  .ticket .btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .ticket .btns button { font-size: 16px; padding: 10px 14px; }
+  .ticket .btns .primary { flex: 1; }
+  details.sold { margin-top: 22px; }
+  details.sold summary { cursor: pointer; font-weight: 600; }
+  .soldlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; margin-top: 12px; }
+  .soldlist label { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; cursor: pointer; }
+  .soldlist label.on { border-color: var(--danger); color: var(--danger); font-weight: 600; }
+  .soldlist input { width: 22px; height: 22px; accent-color: var(--danger); }
+  #soundBtn.on { background: var(--ok); color: #fff; border-color: var(--ok); }
+</style>
+</head>
+<body>
+<header class="top"></header>
+<main>
+  <div class="tools">
+    <button id="soundBtn">🔔 Activar sonido</button>
+    <span class="help">Deja esta pantalla abierta en la tablet de la cocina. Se actualiza sola.</span>
+    <span class="clock" id="clock"></span>
+  </div>
+  <div class="board">
+    <section class="col nuevo"><h2>Nuevos <span class="count" id="c-nuevo"></span></h2><div id="nuevo"></div></section>
+    <section class="col preparando"><h2>Preparando <span class="count" id="c-preparando"></span></h2><div id="preparando"></div></section>
+    <section class="col listo"><h2>Listos para recoger <span class="count" id="c-listo"></span></h2><div id="listo"></div></section>
+  </div>
+  <details class="card sold">
+    <summary>🚫 ¿Se acabó algo? Márcalo aquí y la IA deja de ofrecerlo</summary>
+    <div class="soldlist" id="soldlist"></div>
+  </details>
+</main>
+<iframe id="printer" title="Imprimir" style="position:absolute;width:0;height:0;border:0;visibility:hidden"></iframe>
+
+<script type="module">
+  import { api, esc, money, setupTop } from '/common.js';
+
+  const $ = (id) => document.getElementById(id);
+  const NEXT = { nuevo: ['preparando', 'Empezar'], preparando: ['listo', 'Listo ✓'], listo: ['entregado', 'Entregado'] };
+  const ACTIVE = ['nuevo', 'preparando', 'listo'];
+  const MAX_AGE_MS = 12 * 60 * 60 * 1000;
+
+  let rid = '';
+  let seen = null; // ids de pedidos ya vistos (null = primera carga, no suena)
+  let orders = [];
+  let audio = null;
+
+  // ── Sonido (los navegadores exigen un clic antes de poder sonar) ──
+  $('soundBtn').onclick = () => {
+    audio = audio || new AudioContext();
+    audio.resume();
+    $('soundBtn').classList.add('on');
+    $('soundBtn').textContent = '🔔 Sonido activado';
+    beep();
+  };
+
+  function beep() {
+    if (!audio) return;
+    const now = audio.currentTime;
+    [0, 0.25, 0.5].forEach((t, i) => {
+      const o = audio.createOscillator();
+      const g = audio.createGain();
+      o.frequency.value = i === 2 ? 1175 : 880;
+      g.gain.setValueAtTime(0.0001, now + t);
+      g.gain.exponentialRampToValueAtTime(0.4, now + t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + t + 0.2);
+      o.connect(g).connect(audio.destination);
+      o.start(now + t);
+      o.stop(now + t + 0.22);
+    });
+  }
+
+  function lineHtml(l) {
+    const opts = [...Object.values(l.opciones || {}), ...(l.extras || []).map((e) => `+ ${e}`)];
+    return `<li><b>${esc(l.cantidad)} ×</b> ${esc(l.nombre)}
+      ${opts.length ? `<span class="opt">${esc(opts.join(' · '))}</span>` : ''}
+      ${l.nota ? `<span class="nota">⚠ ${esc(l.nota)}</span>` : ''}</li>`;
+  }
+
+  function minutesAgo(iso) {
+    return Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  }
+
+  function ticket(o, isNew) {
+    const ago = minutesAgo(o.creado);
+    const late = o.estado !== 'listo' && ago >= 25;
+    const [next, label] = NEXT[o.estado];
+    return `
+      <article class="card ticket ${isNew ? 'flash' : ''}">
+        <div class="head"><span class="num">#${esc(o.numero)}</span><span class="when ${late ? 'late' : ''}">hace ${ago} min</span></div>
+        <div class="who">${esc(o.cliente)}</div>
+        <div class="when">Recoge ${esc(o.listo_a_las)}${o.telefono ? ' · ' + esc(o.telefono) : ''}</div>
+        <ul>${o.lineas.map(lineHtml).join('')}</ul>
+        <div class="when" style="margin-bottom:10px">Total ${money(o.total)}</div>
+        <div class="btns">
+          <button class="primary" data-id="${esc(o.id)}" data-estado="${next}">${label}</button>
+          <button data-print="${esc(o.id)}">🖨 Imprimir</button>
+        </div>
+      </article>`;
+  }
+
+  async function loadOrders() {
+    const all = await api(`/api/pedidos?restaurante=${encodeURIComponent(rid)}`);
+    orders = all
+      .filter((o) => ACTIVE.includes(o.estado) && Date.now() - new Date(o.creado).getTime() < MAX_AGE_MS)
+      .sort((a, b) => new Date(a.creado) - new Date(b.creado)); // el más viejo primero
+
+    const fresh = new Set();
+    if (seen) for (const o of orders) if (o.estado === 'nuevo' && !seen.has(o.id)) fresh.add(o.id);
+    seen = new Set(all.map((o) => o.id));
+    if (fresh.size) beep();
+
+    for (const estado of ACTIVE) {
+      const list = orders.filter((o) => o.estado === estado);
+      $(estado).innerHTML = list.map((o) => ticket(o, fresh.has(o.id))).join('') || '<p class="empty">—</p>';
+      $(`c-${estado}`).textContent = list.length || '';
+    }
+    document.title = `${orders.filter((o) => o.estado === 'nuevo').length ? '🔴 ' : ''}Comanda IA · Cocina`;
+  }
+
+  async function loadSoldOut() {
+    const r = await api(`/api/restaurantes/${encodeURIComponent(rid)}`);
+    $('soldlist').innerHTML = r.menu.map((i) => `
+      <label class="${i.agotado ? 'on' : ''}">${esc(i.nombre)}
+        <input type="checkbox" data-item="${esc(i.id)}" ${i.agotado ? 'checked' : ''} /></label>`).join('');
+  }
+
+  $('soldlist').addEventListener('change', async (e) => {
+    const id = e.target.dataset.item;
+    if (!id) return;
+    e.target.closest('label').classList.toggle('on', e.target.checked);
+    try {
+      await api(`/api/restaurantes/${encodeURIComponent(rid)}/agotado`, { method: 'POST', body: JSON.stringify({ item_id: id, agotado: e.target.checked }) });
+    } catch (err) {
+      alert(err.message);
+      loadSoldOut();
+    }
+  });
+
+  document.querySelector('.board').addEventListener('click', async (e) => {
+    const b = e.target.closest('button[data-estado]');
+    if (b) {
+      b.disabled = true;
+      await api(`/api/pedidos/${encodeURIComponent(b.dataset.id)}/estado`, { method: 'POST', body: JSON.stringify({ estado: b.dataset.estado }) });
+      return loadOrders();
+    }
+    const p = e.target.closest('button[data-print]');
+    if (p) printTicket(orders.find((o) => o.id === p.dataset.print));
+  });
+
+  // Ticket de 80 mm para impresora térmica (o cualquier impresora).
+  function printTicket(o) {
+    if (!o) return;
+    const restaurant = document.querySelector('#rest option:checked')?.textContent ?? '';
+    const doc = $('printer').contentDocument;
+    doc.open();
+    doc.write(`<!doctype html><html><head><meta charset="utf-8"><title>Pedido ${esc(o.numero)}</title>
+      <style>
+        @page { size: 80mm auto; margin: 4mm; }
+        body { font: 13px/1.35 monospace; width: 72mm; margin: 0; color: #000; }
+        h1 { font-size: 20px; margin: 0 0 4px; text-align: center; }
+        .c { text-align: center; } hr { border: 0; border-top: 1px dashed #000; }
+        .l { font-size: 15px; margin: 6px 0; } .s { padding-left: 14px; } .n { font-weight: bold; padding-left: 14px; }
+      </style></head><body>
+      <div class="c">${esc(restaurant)}</div>
+      <h1>PEDIDO #${esc(o.numero)}</h1>
+      <div class="c">${esc(o.cliente)} · recoge ${esc(o.listo_a_las)}</div>
+      <hr>
+      ${o.lineas.map((l) => `<div class="l"><b>${esc(l.cantidad)} x ${esc(l.nombre)}</b></div>
+        ${Object.values(l.opciones || {}).length ? `<div class="s">${esc(Object.values(l.opciones).join(', '))}</div>` : ''}
+        ${l.extras?.length ? `<div class="s">+ ${esc(l.extras.join(', '))}</div>` : ''}
+        ${l.nota ? `<div class="n">** ${esc(l.nota)} **</div>` : ''}`).join('')}
+      <hr>
+      <div>Total: ${money(o.total)}</div>
+      <div>${esc(o.telefono || '')}</div>
+      <div class="c" style="margin-top:8px">Pedido por teléfono · Comanda IA</div>
+      </body></html>`);
+    doc.close();
+    setTimeout(() => $('printer').contentWindow.print(), 100);
+  }
+
+  function tick() {
+    $('clock').textContent = new Date().toLocaleTimeString('es-US', { hour: 'numeric', minute: '2-digit' });
+  }
+
+  async function start(id) {
+    rid = id;
+    seen = null;
+    await Promise.all([loadOrders(), loadSoldOut()]);
+  }
+
+  try {
+    const id = await setupTop('cocina.html', start);
+    await start(id);
+    tick();
+    setInterval(tick, 10_000);
+    setInterval(() => loadOrders().catch(() => {}), 3000);
+  } catch (err) {
+    document.querySelector('main').innerHTML = `<p>No se pudo cargar: ${esc(err.message)}. Si usas token, abre con ?token=TU_TOKEN</p>`;
+  }
+</script>
+</body>
+</html>

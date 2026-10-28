@@ -2,9 +2,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Agent } from '../src/agent.js';
-import { getRestaurant } from '../src/restaurants.js';
+import { readFileSync } from 'node:fs';
 
-const r = getRestaurant('el-rincon-latino');
+// Usamos la plantilla original para que las pruebas no dependan de lo que edite el dueño.
+const r = JSON.parse(readFileSync(new URL('../src/restaurants/el-rincon-latino.json', import.meta.url), 'utf8'));
 const SABADO = new Date('2026-10-31T14:00:00-04:00');
 const LUNES = new Date('2026-11-02T14:00:00-05:00');
 

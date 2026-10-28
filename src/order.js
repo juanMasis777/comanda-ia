@@ -35,6 +35,10 @@ export class Order {
       return { ok: false, error: `"${item_id}" no está en el menú. Ofrece algo del menú.` };
     }
 
+    if (item.agotado) {
+      return { ok: false, error: `${item.nombre} se acabó por hoy. Discúlpate y ofrece otra cosa del menú.` };
+    }
+
     if (item.dias?.length) {
       const today = nowIn(this.r.zona_horaria, this.date ?? new Date()).dayKey;
       if (!item.dias.includes(today)) {

@@ -1,10 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Order, ticketText } from '../src/order.js';
-import { getRestaurant } from '../src/restaurants.js';
+import { readFileSync } from 'node:fs';
 import { openStatus } from '../src/time.js';
 
-const r = getRestaurant('el-rincon-latino');
+// Usamos la plantilla original para que las pruebas no dependan de lo que edite el dueño.
+const r = JSON.parse(readFileSync(new URL('../src/restaurants/el-rincon-latino.json', import.meta.url), 'utf8'));
 const SABADO = new Date('2026-10-31T14:00:00-04:00');
 const MARTES = new Date('2026-10-27T14:00:00-04:00');
 const LUNES = new Date('2026-11-02T14:00:00-05:00');
@@ -82,4 +83,12 @@ test('ticket de cocina incluye cliente, platos y total', () => {
   assert.match(t, /#007/);
   assert.match(t, /sin pepinillo/);
   assert.match(t, /\$11\.76/);
+});
+
+test('no deja pedir un plato marcado como agotado', () => {
+  const copy = structuredClone(r);
+  copy.menu.find((i) => i.id === 'vigoron').agotado = true;
+  const res = new Order(copy, { date: SABADO }).addItem({ item_id: 'vigoron' });
+  assert.equal(res.ok, false);
+  assert.match(res.error, /se acabó/);
 });

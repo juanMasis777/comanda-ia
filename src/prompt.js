@@ -22,6 +22,7 @@ function menuText(restaurant) {
         }
         if (i.extras?.length) row += `\n    extras con costo: ${i.extras.map((e) => `${e.nombre} (+$${e.precio.toFixed(2)})`).join(', ')}`;
         if (i.dias?.length) row += `\n    solo disponible: ${i.dias.map((d) => DAY_NAMES[d]).join(' y ')}`;
+        if (i.agotado) row += '\n    AGOTADO HOY: no lo ofrezcas. Si lo piden, di que se acabó y sugiere otra cosa.';
         return row;
       });
       return `${cat.toUpperCase()}\n${rows.join('\n')}`;

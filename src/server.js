@@ -8,7 +8,8 @@ import { fileURLToPath } from 'node:url';
 import express from 'express';
 import { WebSocketServer } from 'ws';
 import { handleRelaySocket } from './relay.js';
-import { getRestaurantByNumber, getRestaurant, listRestaurants } from './restaurants.js';
+import { getRestaurantByNumber, getRestaurant, listRestaurants, findRestaurant, saveRestaurant, setSoldOut } from './restaurants.js';
+import { menuFromFiles, ALLOWED_TYPES } from './menuImport.js';
 import { greeting } from './prompt.js';
 import { store } from './store.js';
 
@@ -17,7 +18,7 @@ const PORT = Number(process.env.PORT || 3000);
 
 const app = express();
 app.use(express.urlencoded({ extended: false }));
-app.use(express.json());
+app.use(express.json({ limit: '25mb' }));
 
 const xml = (s) =>
   String(s).replace(/[<>&'"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": '&apos;', '"': '&quot;' })[c]);
@@ -102,6 +103,41 @@ app.post('/api/pedidos/:id/estado', requireToken, (req, res) => {
   if (!allowed.includes(req.body.estado)) return res.status(400).json({ error: 'Estado inválido' });
   const row = store.updateOrderStatus(req.params.id, req.body.estado);
   return row ? res.json(row) : res.status(404).json({ error: 'No encontrado' });
+});
+
+// ── 4. Editor de menú ──
+app.get('/api/restaurantes/:id', requireToken, (req, res) => {
+  const r = findRestaurant(req.params.id);
+  return r ? res.json(r) : res.status(404).json({ errores: ['Restaurante no encontrado.'] });
+});
+
+app.put('/api/restaurantes/:id', requireToken, (req, res) => {
+  if (!findRestaurant(req.params.id)) return res.status(404).json({ errores: ['Restaurante no encontrado.'] });
+  if (req.body?.id !== req.params.id) return res.status(400).json({ errores: ['El id no coincide.'] });
+  const result = saveRestaurant(req.body);
+  return result.ok ? res.json(result.restaurante) : res.status(400).json({ errores: result.errores });
+});
+
+app.post('/api/restaurantes/:id/agotado', requireToken, (req, res) => {
+  const result = setSoldOut(req.params.id, req.body?.item_id, req.body?.agotado);
+  return result.ok ? res.json({ ok: true }) : res.status(400).json({ errores: result.errores });
+});
+
+// ── 5. Importar menú desde foto o PDF ──
+app.post('/api/importar-menu', requireToken, async (req, res) => {
+  const files = Array.isArray(req.body?.archivos) ? req.body.archivos : [];
+  if (files.length === 0 || files.length > 5) return res.status(400).json({ errores: ['Sube entre 1 y 5 archivos.'] });
+  for (const f of files) {
+    if (!ALLOWED_TYPES.includes(f?.media_type) || typeof f.data !== 'string') {
+      return res.status(400).json({ errores: ['Solo se aceptan fotos (JPG, PNG, WEBP) o PDF.'] });
+    }
+  }
+  try {
+    res.json(await menuFromFiles(files));
+  } catch (err) {
+    console.error('[importar-menu]', err);
+    res.status(502).json({ errores: [`No se pudo leer el menú: ${err.message}`] });
+  }
 });
 
 app.get('/salud', (_req, res) => res.json({ ok: true }));

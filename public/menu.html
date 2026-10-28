@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Comanda IA · Menú</title>
+<link rel="stylesheet" href="/common.css" />
+<style>
+  main { padding-bottom: 110px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .hours { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .import { border: 2px dashed var(--line); }
+  .import .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+  .import input[type=file] { width: auto; max-width: 100%; }
+  .result { margin-top: 12px; }
+  .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+  .toolbar input { flex: 1; min-width: 180px; }
+  .cat { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 18px 0 6px; }
+  .item { margin-bottom: 8px; padding: 0; overflow: hidden; }
+  .item.sold { opacity: .7; }
+  .item .row { display: flex; align-items: center; gap: 10px; padding: 10px 14px; flex-wrap: wrap; }
+  .item .name { font-weight: 600; flex: 1; min-width: 140px; }
+  .item .price { font-variant-numeric: tabular-nums; }
+  .item .editor { border-top: 1px solid var(--line); padding: 14px; display: none; }
+  .item.open .editor { display: block; }
+  .item .editor .full { grid-column: 1 / -1; }
+  .days { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+  .days label { display: inline-flex; gap: 4px; align-items: center; font-size: 13px; color: var(--text); }
+  .days input { width: auto; }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--card); border-top: 1px solid var(--line); padding: 12px 16px; display: flex; gap: 12px; align-items: center; justify-content: flex-end; flex-wrap: wrap; z-index: 20; }
+  .bar .status { flex: 1; color: var(--muted); font-size: 14px; min-width: 180px; }
+  .bar .status.dirty { color: var(--warn); }
+  .bar .status.ok { color: var(--ok); }
+  #errors { position: fixed; left: 16px; right: 16px; bottom: 76px; max-width: 760px; margin: 0 auto; z-index: 21; max-height: 40vh; overflow: auto; }
+  .chk { display: inline-flex; gap: 6px; align-items: center; margin-top: 22px; }
+  .chk input { width: auto; }
+</style>
+</head>
+<body>
+<header class="top"></header>
+<main>
+  <section class="card import">
+    <b>📷 Cargar el menú desde una foto o PDF</b>
+    <div class="help">Sube fotos del menú del restaurante (hasta 5) y la IA arma los platos con sus precios. Después revisas y guardas.</div>
+    <div class="row">
+      <input type="file" id="files" accept="image/jpeg,image/png,image/webp,application/pdf" multiple />
+      <button id="read" class="primary">Leer menú con IA</button>
+      <span id="readStatus" class="help"></span>
+    </div>
+    <div id="result" class="result"></div>
+  </section>
+
+  <h2>Datos del restaurante</h2>
+  <section class="card grid" id="info"></section>
+
+  <h2>Horario</h2>
+  <section class="card">
+    <div class="hours" id="hours"></div>
+    <div class="help">Formato 11:00-21:00. Si abre en dos turnos: 11:00-15:00, 17:00-22:00. Vacío = cerrado.</div>
+  </section>
+
+  <h2>Menú</h2>
+  <div class="toolbar">
+    <input id="search" placeholder="Buscar plato…" />
+    <button id="add">+ Agregar plato</button>
+  </div>
+  <section id="menu"></section>
+</main>
+
+<div id="errors" hidden></div>
+<div class="bar">
+  <span class="status" id="status">Sin cambios</span>
+  <button id="discard">Descartar cambios</button>
+  <button id="save" class="primary">Guardar cambios</button>
+</div>
+
+<script type="module">
+  import { api, esc, setupTop } from '/common.js';
+  import { parseOptions, formatOptions, parseExtras, formatExtras, parseHours, formatHours, parseList, uniqueId } from '/menu-format.js';
+
+  const $ = (id) => document.getElementById(id);
+  const DAYS = [['lun', 'Lunes'], ['mar', 'Martes'], ['mie', 'Miércoles'], ['jue', 'Jueves'], ['vie', 'Viernes'], ['sab', 'Sábado'], ['dom', 'Domingo']];
+  const SHORT = { lun: 'L', mar: 'M', mie: 'Mi', jue: 'J', vie: 'V', sab: 'S', dom: 'D' };
+
+  let rid = '';
+  let r = null;         // restaurante que estamos editando
+  let saved = null;     // copia de lo guardado en el servidor
+  let dirty = false;
+  let filter = '';
+  const open = new Set();
+  const texts = new Map(); // textos de opciones/extras mientras el dueño escribe: id -> {opciones, extras}
+
+  function setDirty(v = true) {
+    dirty = v;
+    const s = $('status');
+    s.className = 'status' + (v ? ' dirty' : '');
+    s.textContent = v ? 'Tienes cambios sin guardar' : 'Sin cambios';
+  }
+
+  function showErrors(list) {
+    const box = $('errors');
+    if (!list?.length) { box.hidden = true; return; }
+    box.innerHTML = `<div class="errors"><b>Revisa esto antes de guardar:</b><ul>${list.map((e) => `<li>${esc(e)}</li>`).join('')}</ul></div>`;
+    box.hidden = false;
+  }
+
+  // ── Datos generales ──
+  function renderInfo() {
+    const f = (key, label, extra = '') => `<label class="field">${label}<input data-k="${key}" value="${esc(r[key] ?? '')}" ${extra} /></label>`;
+    $('info').innerHTML = `
+      ${f('nombre', 'Nombre del restaurante')}
+      ${f('direccion', 'Dirección')}
+      ${f('referencia', 'Referencia (cómo llegar)')}
+      ${f('telefono_transferencia', 'Teléfono para pasar llamadas', 'placeholder="+13055551234"')}
+      ${f('telefono_cocina', 'Teléfono de la cocina (SMS)', 'placeholder="+13055551234"')}
+      ${f('twilio_number', 'Número de Twilio', 'placeholder="+13055551234"')}
+      <label class="field">Minutos de preparación<input data-k="minutos_preparacion" type="number" min="1" max="180" value="${esc(r.minutos_preparacion)}" /></label>
+      <label class="field">Impuesto (%)<input data-k="impuesto_pct" type="number" step="0.01" min="0" max="20" value="${esc(+(r.impuesto * 100).toFixed(2))}" /></label>
+      <label class="chk"><input type="checkbox" data-k="delivery" ${r.delivery ? 'checked' : ''} /> Tiene delivery propio</label>
+      <label class="field full" style="grid-column:1/-1">Políticas (una por línea; la IA las usa para responder)
+        <textarea data-k="politicas">${esc((r.politicas || []).join('\n'))}</textarea></label>`;
+  }
+
+  $('info').addEventListener('input', (e) => {
+    const k = e.target.dataset.k;
+    if (!k) return;
+    if (k === 'minutos_preparacion') r[k] = parseInt(e.target.value, 10);
+    else if (k === 'impuesto_pct') r.impuesto = Math.round(parseFloat(e.target.value || '0') * 100) / 10000;
+    else if (k === 'delivery') r.delivery = e.target.checked;
+    else if (k === 'politicas') r.politicas = e.target.value.split('\n').map((s) => s.trim()).filter(Boolean);
+    else r[k] = e.target.value.trim();
+    setDirty();
+  });
+
+  // ── Horario ──
+  function renderHours() {
+    $('hours').innerHTML = DAYS.map(([k, label]) =>
+      `<label class="field">${label}<input data-day="${k}" value="${esc(formatHours(r.horario?.[k] || []))}" placeholder="cerrado" /></label>`
+    ).join('');
+  }
+  $('hours').addEventListener('input', () => setDirty());
+
+  // ── Menú ──
+  function itemCard(item) {
+    const t = texts.get(item.id) ?? { opciones: formatOptions(item.opciones), extras: formatExtras(item.extras) };
+    texts.set(item.id, t);
+    return `
+      <article class="card item ${item.agotado ? 'sold' : ''} ${open.has(item.id) ? 'open' : ''}" data-id="${esc(item.id)}">
+        <div class="row">
+          <span class="name">${esc(item.nombre || 'Plato nuevo')}</span>
+          ${item.agotado ? '<span class="tag sold">Se acabó</span>' : ''}
+          ${item.dias?.length ? `<span class="tag">solo ${item.dias.map((d) => SHORT[d]).join(' ')}</span>` : ''}
+          <span class="price">$${Number(item.precio || 0).toFixed(2)}</span>
+          <label class="switch"><input type="checkbox" data-act="sold" ${item.agotado ? 'checked' : ''} /> Se acabó</label>
+          <button data-act="toggle">${open.has(item.id) ? 'Cerrar' : 'Editar'}</button>
+        </div>
+        <div class="editor"><div class="grid">
+          <label class="field">Nombre<input data-f="nombre" value="${esc(item.nombre)}" /></label>
+          <label class="field">Precio ($)<input data-f="precio" type="number" step="0.01" min="0" value="${esc(item.precio)}" /></label>
+          <label class="field">Categoría<input data-f="categoria" list="cats" value="${esc(item.categoria)}" /></label>
+          <label class="field full">Descripción (la IA la usa si preguntan qué lleva)<input data-f="descripcion" value="${esc(item.descripcion || '')}" /></label>
+          <label class="field full">Otros nombres que usan los clientes (separados por coma)<input data-f="alias" value="${esc((item.alias || []).join(', '))}" placeholder="maduritos, plátano maduro" /></label>
+          <label class="field full">Opciones a elegir — una por línea, * = obligatoria
+            <textarea data-f="opciones" placeholder="tamaño*: mediano, grande +1.50&#10;salsa: roja, verde">${esc(t.opciones)}</textarea>
+            <div class="help">El número después de + es lo que cuesta de más.</div></label>
+          <label class="field full">Extras con costo (separados por coma)<input data-f="extras" value="${esc(t.extras)}" placeholder="aguacate +2.00, queso extra +1.50" /></label>
+          <div class="field full">Solo se vende estos días (si no marcas ninguno, se vende todos los días)
+            <div class="days">${DAYS.map(([k, label]) => `<label><input type="checkbox" data-day="${k}" ${item.dias?.includes(k) ? 'checked' : ''} /> ${label}</label>`).join('')}</div>
+          </div>
+          <div class="full"><button class="danger" data-act="delete">Eliminar plato</button></div>
+        </div></div>
+      </article>`;
+  }
+
+  function renderMenu() {
+    const items = r.menu.filter((i) => !filter || `${i.nombre} ${i.categoria} ${(i.alias || []).join(' ')}`.toLowerCase().includes(filter));
+    const byCat = new Map();
+    for (const i of items) {
+      const c = i.categoria || 'sin categoría';
+      if (!byCat.has(c)) byCat.set(c, []);
+      byCat.get(c).push(i);
+    }
+    const cats = [...new Set(r.menu.map((i) => i.categoria).filter(Boolean))];
+    $('menu').innerHTML =
+      `<datalist id="cats">${cats.map((c) => `<option value="${esc(c)}">`).join('')}</datalist>` +
+      ([...byCat].map(([cat, list]) => `<div class="cat">${esc(cat)} · ${list.length}</div>${list.map(itemCard).join('')}`).join('') ||
+        '<p class="empty">No hay platos que coincidan.</p>');
+  }
+
+  const findItem = (el) => {
+    const card = el.closest('.item');
+    return card ? r.menu.find((i) => i.id === card.dataset.id) : null;
+  };
+
+  $('menu').addEventListener('input', (e) => {
+    const item = findItem(e.target);
+    const f = e.target.dataset.f;
+    if (!item || !f) return;
+    const v = e.target.value;
+    if (f === 'precio') item.precio = Math.round(parseFloat(v || '0') * 100) / 100;
+    else if (f === 'alias') item.alias = parseList(v);
+    else if (f === 'opciones' || f === 'extras') texts.get(item.id)[f] = v;
+    else if (f === 'descripcion') { if (v.trim()) item.descripcion = v; else delete item.descripcion; }
+    else item[f] = v;
+    if (f === 'nombre') e.target.closest('.item').querySelector('.name').textContent = v || 'Plato nuevo';
+    if (f === 'precio') e.target.closest('.item').querySelector('.price').textContent = `$${item.precio.toFixed(2)}`;
+    setDirty();
+  });
+
+  $('menu').addEventListener('change', async (e) => {
+    const item = findItem(e.target);
+    if (!item) return;
+    if (e.target.dataset.day) {
+      const days = [...e.target.closest('.days').querySelectorAll('input:checked')].map((x) => x.dataset.day);
+      if (days.length) item.dias = days; else delete item.dias;
+      setDirty();
+      return;
+    }
+    if (e.target.dataset.act === 'sold') {
+      item.agotado = e.target.checked;
+      if (!item.agotado) delete item.agotado;
+      // Si el plato ya existe en el servidor y no hay otros cambios, se guarda al instante.
+      const existed = saved.menu.some((i) => i.id === item.id);
+      if (existed && !dirty) {
+        try {
+          await api(`/api/restaurantes/${encodeURIComponent(rid)}/agotado`, { method: 'POST', body: JSON.stringify({ item_id: item.id, agotado: Boolean(item.agotado) }) });
+          const s = saved.menu.find((i) => i.id === item.id);
+          if (item.agotado) s.agotado = true; else delete s.agotado;
+          $('status').className = 'status ok';
+          $('status').textContent = item.agotado ? `${item.nombre}: marcado como agotado ✓` : `${item.nombre}: disponible otra vez ✓`;
+        } catch (err) {
+          showErrors(err.errores);
+        }
+      } else {
+        setDirty();
+      }
+      renderMenu();
+    }
+  });
+
+  $('menu').addEventListener('click', (e) => {
+    const act = e.target.dataset.act;
+    const item = findItem(e.target);
+    if (!item || !act) return;
+    if (act === 'toggle') {
+      open.has(item.id) ? open.delete(item.id) : open.add(item.id);
+      renderMenu();
+    }
+    if (act === 'delete' && confirm(`¿Eliminar "${item.nombre || 'este plato'}" del menú?`)) {
+      r.menu = r.menu.filter((i) => i !== item);
+      setDirty();
+      renderMenu();
+    }
+  });
+
+  $('search').addEventListener('input', (e) => { filter = e.target.value.trim().toLowerCase(); renderMenu(); });
+
+  $('add').onclick = () => {
+    const taken = new Set(r.menu.map((i) => i.id));
+    const item = { id: uniqueId('plato-nuevo', taken), nombre: '', precio: 0, categoria: r.menu.at(-1)?.categoria || 'platos', _nuevo: true };
+    r.menu.push(item);
+    open.add(item.id);
+    filter = '';
+    $('search').value = '';
+    setDirty();
+    renderMenu();
+    document.querySelector(`.item[data-id="${CSS.escape(item.id)}"] input[data-f="nombre"]`)?.focus();
+  };
+
+  // ── Guardar ──
+  function buildPayload() {
+    const errors = [];
+    const out = structuredClone(r);
+    const horario = {};
+    for (const input of $('hours').querySelectorAll('input')) {
+      try { horario[input.dataset.day] = parseHours(input.value); }
+      catch (e) { errors.push(`${DAYS.find(([k]) => k === input.dataset.day)[1]}: ${e.message}`); }
+    }
+    out.horario = horario;
+
+    const taken = new Set(out.menu.filter((i) => !i._nuevo).map((i) => i.id));
+    out.menu = out.menu.map((item) => {
+      const t = texts.get(item.id) ?? { opciones: formatOptions(item.opciones), extras: formatExtras(item.extras) };
+      const name = item.nombre?.trim() || '(sin nombre)';
+      try { const o = parseOptions(t.opciones); if (o.length) item.opciones = o; else delete item.opciones; }
+      catch (e) { errors.push(`${name}: ${e.message}`); }
+      try { const x = parseExtras(t.extras); if (x.length) item.extras = x; else delete item.extras; }
+      catch (e) { errors.push(`${name}: ${e.message}`); }
+      if (!item.alias?.length) delete item.alias;
+      item.nombre = item.nombre?.trim() ?? '';
+      item.categoria = item.categoria?.trim().toLowerCase() ?? '';
+      if (item._nuevo) { item.id = uniqueId(item.nombre || 'plato', taken); delete item._nuevo; }
+      return item;
+    });
+    return { out, errors };
+  }
+
+  $('save').onclick = async () => {
+    const { out, errors } = buildPayload();
+    if (errors.length) return showErrors(errors);
+    $('save').disabled = true;
+    $('status').textContent = 'Guardando…';
+    try {
+      const data = await api(`/api/restaurantes/${encodeURIComponent(rid)}`, { method: 'PUT', body: JSON.stringify(out) });
+      showErrors([]);
+      load(data);
+      $('status').className = 'status ok';
+      $('status').textContent = 'Guardado ✓ La IA ya usa el menú nuevo en la próxima llamada.';
+    } catch (err) {
+      showErrors(err.errores);
+      $('status').className = 'status dirty';
+      $('status').textContent = 'No se guardó';
+    } finally {
+      $('save').disabled = false;
+    }
+  };
+
+  $('discard').onclick = () => {
+    if (dirty && !confirm('¿Descartar todos los cambios sin guardar?')) return;
+    load(saved);
+    showErrors([]);
+  };
+
+  window.addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+  // ── Importar desde foto ──
+  const toBase64 = (file) => new Promise((ok, fail) => {
+    const fr = new FileReader();
+    fr.onload = () => ok(String(fr.result).split(',')[1]);
+    fr.onerror = fail;
+    fr.readAsDataURL(file);
+  });
+
+  let imported = null;
+  $('read').onclick = async () => {
+    const files = [...$('files').files];
+    if (!files.length) return ($('readStatus').textContent = 'Primero elige una foto o PDF.');
+    if (files.length > 5) return ($('readStatus').textContent = 'Máximo 5 archivos.');
+    if (files.some((f) => f.size > 5 * 1024 * 1024)) return ($('readStatus').textContent = 'Cada archivo debe pesar menos de 5 MB.');
+    $('read').disabled = true;
+    $('readStatus').textContent = 'Leyendo el menú… puede tardar hasta un minuto.';
+    $('result').innerHTML = '';
+    try {
+      const archivos = await Promise.all(files.map(async (f) => ({ media_type: f.type, data: await toBase64(f) })));
+      imported = await api('/api/importar-menu', { method: 'POST', body: JSON.stringify({ archivos }) });
+      const cats = [...new Set(imported.menu.map((i) => i.categoria))];
+      $('readStatus').textContent = '';
+      $('result').innerHTML = `
+        <div class="card">
+          <b>Encontré ${imported.menu.length} platos</b> en ${cats.length} categorías (${esc(cats.join(', '))}).
+          ${imported.nombre_restaurante ? `<div class="help">Nombre en el menú: ${esc(imported.nombre_restaurante)}</div>` : ''}
+          ${imported.omitidos.length ? `<div class="help">No pude leer el precio de: ${esc(imported.omitidos.join(', '))}</div>` : ''}
+          ${imported.notas ? `<div class="help">Notas: ${esc(imported.notas)}</div>` : ''}
+          <div class="row" style="margin-top:10px">
+            <button class="primary" data-mode="replace">Reemplazar el menú actual</button>
+            <button data-mode="append">Agregar al menú actual</button>
+          </div>
+          <div class="help">No se guarda hasta que revises y le des a "Guardar cambios".</div>
+        </div>`;
+    } catch (err) {
+      $('readStatus').textContent = err.message;
+    } finally {
+      $('read').disabled = false;
+    }
+  };
+
+  $('result').addEventListener('click', (e) => {
+    const mode = e.target.dataset.mode;
+    if (!mode || !imported) return;
+    if (mode === 'replace') {
+      r.menu = imported.menu.map((i) => ({ ...i, _nuevo: true }));
+    } else {
+      r.menu = [...r.menu, ...imported.menu.map((i) => ({ ...i, _nuevo: true }))];
+    }
+    // ids temporales únicos para el editor
+    const taken = new Set();
+    for (const i of r.menu) { if (i._nuevo) i.id = uniqueId(`nuevo-${i.id}`, taken); else taken.add(i.id); }
+    texts.clear();
+    imported = null;
+    $('result').innerHTML = '<div class="help">Listo. Revisa los platos abajo y luego dale a "Guardar cambios".</div>';
+    setDirty();
+    renderMenu();
+    $('menu').scrollIntoView({ behavior: 'smooth' });
+  });
+
+  // ── Cargar ──
+  function load(data) {
+    saved = structuredClone(data);
+    r = structuredClone(data);
+    texts.clear();
+    open.clear();
+    renderInfo();
+    renderHours();
+    renderMenu();
+    setDirty(false);
+  }
+
+  async function fetchRestaurant(id) {
+    rid = id;
+    load(await api(`/api/restaurantes/${encodeURIComponent(id)}`));
+  }
+
+  try {
+    const id = await setupTop('menu.html', (newId) => {
+      if (dirty && !confirm('Tienes cambios sin guardar. ¿Cambiar de restaurante y perderlos?')) return;
+      fetchRestaurant(newId);
+    });
+    await fetchRestaurant(id);
+  } catch (err) {
+    document.querySelector('main').innerHTML = `<p>No se pudo cargar: ${esc(err.message)}. Si usas token, abre con ?token=TU_TOKEN</p>`;
+  }
+</script>
+</body>
+</html>
