@@ -1,0 +1,204 @@
+{
+  "id": "el-rincon-latino",
+  "nombre": "El Rincón Latino",
+  "nota_demo": "Restaurante ficticio para pruebas. Cámbialo por el menú real de tu cliente.",
+  "twilio_number": "",
+  "telefono_transferencia": "+13055550100",
+  "telefono_cocina": "+13055550101",
+  "direccion": "1234 West Flagler Street, Miami, FL 33135",
+  "referencia": "Al lado de la farmacia, con parqueo atrás",
+  "zona_horaria": "America/New_York",
+  "minutos_preparacion": 20,
+  "impuesto": 0.07,
+  "delivery": false,
+  "politicas": [
+    "Solo pedidos para recoger. Para delivery el cliente puede usar Uber Eats o DoorDash.",
+    "Se paga al recoger en efectivo o tarjeta.",
+    "Pedidos para más de 15 personas o catering se pasan con el encargado."
+  ],
+  "horario": {
+    "lun": [],
+    "mar": [["11:00", "21:00"]],
+    "mie": [["11:00", "21:00"]],
+    "jue": [["11:00", "21:00"]],
+    "vie": [["11:00", "22:00"]],
+    "sab": [["10:00", "22:00"]],
+    "dom": [["10:00", "20:00"]]
+  },
+  "menu": [
+    {
+      "id": "vigoron",
+      "nombre": "Vigorón",
+      "categoria": "platos",
+      "descripcion": "Yuca cocida con chicharrón y ensalada de repollo",
+      "precio": 12.99,
+      "alias": ["vigoron", "vigorón"]
+    },
+    {
+      "id": "fritanga-carne",
+      "nombre": "Plato de fritanga con carne asada",
+      "categoria": "platos",
+      "descripcion": "Carne asada, gallo pinto, tajadas, queso frito y ensalada",
+      "precio": 15.99,
+      "alias": ["fritanga", "carne asada", "plato de carne"],
+      "opciones": [
+        {
+          "grupo": "tajadas",
+          "requerido": true,
+          "elecciones": [
+            { "nombre": "verdes", "precio_extra": 0 },
+            { "nombre": "maduras", "precio_extra": 0 }
+          ]
+        }
+      ],
+      "extras": [
+        { "nombre": "queso frito extra", "precio": 2.5 },
+        { "nombre": "aguacate", "precio": 2.0 }
+      ]
+    },
+    {
+      "id": "pollo-frito",
+      "nombre": "Pollo frito con tajadas",
+      "categoria": "platos",
+      "descripcion": "Cuatro piezas de pollo frito con tajadas y ensalada",
+      "precio": 11.99,
+      "alias": ["pollo", "pollo frito"],
+      "opciones": [
+        {
+          "grupo": "tajadas",
+          "requerido": true,
+          "elecciones": [
+            { "nombre": "verdes", "precio_extra": 0 },
+            { "nombre": "maduras", "precio_extra": 0 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nacatamal",
+      "nombre": "Nacatamal",
+      "categoria": "platos",
+      "descripcion": "Nacatamal de cerdo envuelto en hoja de plátano",
+      "precio": 7.99,
+      "alias": ["nacatamal", "tamal"],
+      "dias": ["sab", "dom"]
+    },
+    {
+      "id": "vaca-frita",
+      "nombre": "Vaca frita",
+      "categoria": "platos",
+      "descripcion": "Carne de res desmenuzada y frita con cebolla, con arroz blanco y frijoles negros",
+      "precio": 16.99,
+      "alias": ["vaca frita"]
+    },
+    {
+      "id": "sandwich-cubano",
+      "nombre": "Sándwich cubano",
+      "categoria": "platos",
+      "descripcion": "Jamón, lechón, queso suizo, pepinillo y mostaza en pan cubano",
+      "precio": 10.99,
+      "alias": ["cubano", "sandwich cubano", "cuban sandwich"]
+    },
+    {
+      "id": "arroz-con-pollo",
+      "nombre": "Arroz con pollo",
+      "categoria": "platos",
+      "descripcion": "Arroz amarillo con pollo, servido con maduros",
+      "precio": 13.99,
+      "alias": ["arroz con pollo"]
+    },
+    {
+      "id": "gallo-pinto",
+      "nombre": "Gallo pinto",
+      "categoria": "acompañantes",
+      "precio": 4.0,
+      "alias": ["gallo pinto", "pinto"]
+    },
+    {
+      "id": "tostones",
+      "nombre": "Tostones",
+      "categoria": "acompañantes",
+      "precio": 4.5,
+      "alias": ["tostones", "patacones"]
+    },
+    {
+      "id": "maduros",
+      "nombre": "Maduros",
+      "categoria": "acompañantes",
+      "precio": 4.5,
+      "alias": ["maduros", "maduritos", "plátano maduro"]
+    },
+    {
+      "id": "batido",
+      "nombre": "Batido natural",
+      "categoria": "bebidas",
+      "precio": 5.5,
+      "alias": ["batido", "licuado", "smoothie"],
+      "opciones": [
+        {
+          "grupo": "sabor",
+          "requerido": true,
+          "elecciones": [
+            { "nombre": "pitahaya", "precio_extra": 0 },
+            { "nombre": "mango", "precio_extra": 0 },
+            { "nombre": "cacao", "precio_extra": 0 },
+            { "nombre": "mamey", "precio_extra": 0 }
+          ]
+        },
+        {
+          "grupo": "tamaño",
+          "requerido": true,
+          "elecciones": [
+            { "nombre": "mediano", "precio_extra": 0 },
+            { "nombre": "grande", "precio_extra": 1.5 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "refresco",
+      "nombre": "Refresco en lata",
+      "categoria": "bebidas",
+      "precio": 2.5,
+      "alias": ["refresco", "soda", "coca", "gaseosa"],
+      "opciones": [
+        {
+          "grupo": "sabor",
+          "requerido": true,
+          "elecciones": [
+            { "nombre": "Coca-Cola", "precio_extra": 0 },
+            { "nombre": "Sprite", "precio_extra": 0 },
+            { "nombre": "Materva", "precio_extra": 0 },
+            { "nombre": "Jupiña", "precio_extra": 0 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "cafe-cubano",
+      "nombre": "Café cubano",
+      "categoria": "bebidas",
+      "precio": 1.75,
+      "alias": ["cafecito", "café", "colada", "cafe cubano"]
+    },
+    {
+      "id": "tres-leches",
+      "nombre": "Tres leches",
+      "categoria": "postres",
+      "precio": 5.99,
+      "alias": ["tres leches", "pastel"]
+    },
+    {
+      "id": "quesillo",
+      "nombre": "Quesillo",
+      "categoria": "postres",
+      "descripcion": "Tortilla con quesillo, crema y cebolla encurtida",
+      "precio": 6.99,
+      "alias": ["quesillo"]
+    }
+  ],
+  "sugerencias": [
+    { "si_pide_categoria": "platos", "sin_categoria": "bebidas", "sugerir": "batido", "frase": "¿Le agrego un batido natural de pitahaya o mango para acompañar?" },
+    { "si_pide_categoria": "platos", "sin_categoria": "postres", "sugerir": "tres-leches", "frase": "¿Y de postre un tres leches?" }
+  ]
+}

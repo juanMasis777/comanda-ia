@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Comanda IA · Panel</title>
+<style>
+  :root {
+    --bg: #f6f5f2; --card: #ffffff; --text: #1d1b18; --muted: #6b665e; --line: #e6e2da;
+    --accent: #d9480f; --ok: #2b8a3e; --warn: #e67700; --info: #1971c2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #151412; --card: #201e1b; --text: #f1eee8; --muted: #a39d93; --line: #34312c; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
+  header { padding: 18px 16px; border-bottom: 1px solid var(--line); display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+  h1 { margin: 0; font-size: 20px; } h1 span { color: var(--accent); }
+  main { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  select { font: inherit; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); color: var(--text); }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  .stat b { display: block; font-size: 24px; } .stat small { color: var(--muted); }
+  h2 { font-size: 16px; margin: 24px 0 10px; }
+  .orders { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+  .order { background: var(--card); border: 1px solid var(--line); border-left: 5px solid var(--info); border-radius: 12px; padding: 14px; }
+  .order.preparando { border-left-color: var(--warn); } .order.listo { border-left-color: var(--ok); }
+  .order.entregado, .order.cancelado { opacity: .55; }
+  .order header { padding: 0; border: 0; } .order h3 { margin: 0; font-size: 17px; }
+  .order ul { padding-left: 18px; margin: 10px 0; } .meta { color: var(--muted); font-size: 13px; }
+  .btns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  button { font: inherit; font-size: 13px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--text); cursor: pointer; }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  details { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; margin-bottom: 8px; }
+  summary { cursor: pointer; } .tag { font-size: 12px; padding: 2px 8px; border-radius: 99px; background: var(--bg); border: 1px solid var(--line); margin-left: 6px; }
+  .msg { margin: 6px 0; } .msg.agente { color: var(--muted); }
+  .empty { color: var(--muted); padding: 20px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Comanda <span>IA</span></h1>
+  <select id="rest"></select>
+</header>
+<main>
+  <section class="stats" id="stats"></section>
+  <h2>Pedidos</h2>
+  <section class="orders" id="orders"></section>
+  <h2>Llamadas recientes</h2>
+  <section id="calls"></section>
+</main>
+<script>
+  const token = new URLSearchParams(location.search).get('token') || '';
+  const headers = token ? { 'x-dashboard-token': token, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
+  const $ = (id) => document.getElementById(id);
+  const money = (n) => '$' + Number(n || 0).toFixed(2);
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+  const NEXT = { nuevo: 'preparando', preparando: 'listo', listo: 'entregado' };
+  const LABEL = { preparando: 'Empezar', listo: 'Marcar listo', entregado: 'Entregado' };
+  let restaurante = '';
+
+  async function api(url, opts) {
+    const res = await fetch(url, { headers, ...opts });
+    if (!res.ok) throw new Error(res.status);
+    return res.json();
+  }
+
+  function describe(l) {
+    const opts = Object.values(l.opciones || {});
+    let t = `${l.cantidad} x ${l.nombre}`;
+    if (opts.length) t += ` (${opts.join(', ')})`;
+    if (l.extras?.length) t += ` con ${l.extras.join(' y ')}`;
+    if (l.nota) t += ` — ${l.nota}`;
+    return esc(t);
+  }
+
+  async function load() {
+    const q = restaurante ? `?restaurante=${encodeURIComponent(restaurante)}` : '';
+    const [s, orders, calls] = await Promise.all([api('/api/estadisticas' + q), api('/api/pedidos' + q), api('/api/llamadas' + q)]);
+
+    $('stats').innerHTML = [
+      ['Llamadas atendidas', s.llamadas], ['Pedidos tomados', s.pedidos], ['Ventas por teléfono', money(s.ventas)],
+      ['Ticket promedio', money(s.ticket_promedio)], ['Fuera de horario', s.fuera_de_horario], ['Pasadas a una persona', s.transferidas],
+    ].map(([k, v]) => `<div class="stat"><b>${v}</b><small>${k}</small></div>`).join('');
+
+    $('orders').innerHTML = orders.length ? orders.slice(0, 30).map((o) => `
+      <article class="order ${o.estado}">
+        <header><h3>#${esc(o.numero)} · ${esc(o.cliente)}</h3><span class="tag">${esc(o.estado)}</span></header>
+        <div class="meta">Recoge ${esc(o.listo_a_las)} · ${esc(o.telefono || '')}</div>
+        <ul>${o.lineas.map((l) => `<li>${describe(l)}</li>`).join('')}</ul>
+        <b>${money(o.total)}</b>
+        <div class="btns">
+          ${NEXT[o.estado] ? `<button class="primary" onclick="setStatus('${o.id}','${NEXT[o.estado]}')">${LABEL[NEXT[o.estado]]}</button>` : ''}
+          ${!['entregado', 'cancelado'].includes(o.estado) ? `<button onclick="setStatus('${o.id}','cancelado')">Cancelar</button>` : ''}
+        </div>
+      </article>`).join('') : '<p class="empty">Todavía no hay pedidos.</p>';
+
+    $('calls').innerHTML = calls.length ? calls.slice(0, 30).map((c) => `
+      <details>
+        <summary>${esc(new Date(c.inicio).toLocaleString('es-US'))} · ${esc(c.telefono || 'desconocido')}
+          <span class="tag">${esc(c.resultado)}</span>${c.idioma === 'en' ? '<span class="tag">inglés</span>' : ''}</summary>
+        ${(c.conversacion || []).map((m) => `<p class="msg ${m.rol}"><b>${m.rol === 'cliente' ? 'Cliente' : 'IA'}:</b> ${esc(m.texto)}</p>`).join('')}
+      </details>`).join('') : '<p class="empty">Todavía no hay llamadas.</p>';
+  }
+
+  async function setStatus(id, estado) {
+    await api(`/api/pedidos/${encodeURIComponent(id)}/estado`, { method: 'POST', body: JSON.stringify({ estado }) });
+    load();
+  }
+
+  (async () => {
+    const list = await api('/api/restaurantes');
+    $('rest').innerHTML = list.map((r) => `<option value="${esc(r.id)}">${esc(r.nombre)}</option>`).join('');
+    restaurante = list[0]?.id || '';
+    $('rest').onchange = (e) => { restaurante = e.target.value; load(); };
+    load();
+    setInterval(load, 5000);
+  })().catch(() => { document.body.innerHTML = '<main><p>No autorizado. Abre el panel con ?token=TU_TOKEN</p></main>'; });
+</script>
+</body>
+</html>
