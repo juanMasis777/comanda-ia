@@ -17,10 +17,15 @@ export function validateRestaurant(r) {
   if (!isText(r.nombre)) errors.push('Falta el nombre del restaurante.');
   if (!isText(r.direccion)) errors.push('Falta la dirección.');
 
-  for (const field of ['telefono_transferencia', 'telefono_cocina', 'twilio_number']) {
+  for (const field of ['telefono_transferencia', 'telefono_cocina', 'twilio_number', 'telefono_dueno']) {
     const v = r[field];
     if (v && !PHONE.test(v)) errors.push(`El teléfono "${field}" debe tener formato +13055551234.`);
   }
+
+  if (r.email_dueno && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(r.email_dueno)) errors.push('El correo del dueño no es válido.');
+  if (r.reporte_semanal != null && typeof r.reporte_semanal !== 'boolean') errors.push('"Reporte semanal" debe ser sí o no.');
+  if (r.chat_web != null && typeof r.chat_web !== 'boolean') errors.push('"Chat web" debe ser sí o no.');
+  if (r.color_chat && !/^#[0-9a-fA-F]{6}$/.test(r.color_chat)) errors.push('El color del chat debe ser como #d9480f.');
 
   try {
     new Intl.DateTimeFormat('en-US', { timeZone: r.zona_horaria });

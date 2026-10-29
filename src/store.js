@@ -35,6 +35,10 @@ export const store = {
     return saved;
   },
 
+  getOrder(id) {
+    return read('pedidos').find((o) => o.id === id) ?? null;
+  },
+
   updateOrderStatus(id, estado) {
     const rows = read('pedidos');
     const row = rows.find((o) => o.id === id);

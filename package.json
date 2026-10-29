@@ -1,6 +1,6 @@
 {
   "name": "comanda-ia",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Agente de voz con IA que contesta el teléfono de restaurantes latinos y toma pedidos en español e inglés",
   "type": "module",
   "main": "src/server.js",
@@ -8,7 +8,8 @@
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "simular": "node src/simulator.js",
-    "test": "node --test"
+    "test": "node --test",
+    "acceso": "node scripts/acceso.js"
   },
   "engines": {
     "node": ">=20"

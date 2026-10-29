@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Comanda IA · Reporte semanal</title>
+<link rel="stylesheet" href="/common.css" />
+<style>
+  main { max-width: 980px; }
+  .head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin: 8px 0 18px; }
+  .head h2 { margin: 0; font-size: 24px; }
+  .head p { margin: 4px 0 0; color: var(--muted); }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .actions select { width: auto; }
+  .hero { display: grid; grid-template-columns: 1.3fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 720px) { .hero { grid-template-columns: 1fr; } }
+  .big { background: var(--accent); color: #fff; border: 0; padding: 22px; }
+  .big small { font-size: 14px; opacity: .9; }
+  .big b { display: block; font-size: 44px; line-height: 1.1; margin: 6px 0; font-variant-numeric: tabular-nums; }
+  .big .chg { display: inline-block; background: rgba(255,255,255,.2); border-radius: 99px; padding: 3px 10px; font-size: 13px; }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 14px; }
+  .kpi b { display: block; font-size: 28px; font-variant-numeric: tabular-nums; }
+  .kpi small { color: var(--muted); }
+  .kpi .sub { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .chg.up { color: var(--ok); } .chg.down { color: var(--danger); }
+  .big .chg.up, .big .chg.down { color: #fff; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 720px) { .two { grid-template-columns: 1fr; } }
+  .card h3 { margin: 0 0 12px; font-size: 15px; }
+  .bars { display: flex; align-items: flex-end; gap: 4px; height: 150px; }
+  .bars .b { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 4px; min-width: 0; }
+  .bars .b i { display: block; width: 100%; background: var(--accent); border-radius: 4px 4px 0 0; min-height: 2px; opacity: .85; }
+  .bars .b.peak i { opacity: 1; background: var(--accent); }
+  .bars .b span { font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .bars .b em { font-style: normal; font-size: 11px; font-weight: 600; }
+  .ranking { list-style: none; margin: 0; padding: 0; }
+  .ranking li { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .ranking li:last-child { border: 0; }
+  .ranking .bar { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: var(--accent-soft); overflow: hidden; }
+  .ranking .bar i { display: block; height: 100%; background: var(--accent); }
+  .insight { background: var(--accent-soft); border: 0; }
+  .insight ul { margin: 6px 0 0; padding-left: 18px; }
+  @media print { .top, .actions { display: none !important; } body { background: #fff; } }
+</style>
+</head>
+<body>
+<header class="top"></header>
+<main>
+  <div class="head">
+    <div><h2 id="title">Reporte semanal</h2><p id="sub"></p></div>
+    <div class="actions">
+      <select id="week" aria-label="Semana"></select>
+      <button id="send">📲 Enviar por SMS al dueño</button>
+      <button onclick="print()">🖨 Imprimir</button>
+    </div>
+  </div>
+  <div id="out"></div>
+</main>
+<script type="module">
+  import { api, esc, money, setupTop } from '/common.js';
+
+  const $ = (id) => document.getElementById(id);
+  const q = new URLSearchParams(location.search);
+  const signed = q.get('firma');
+  const DAYS = { lun: 'Lun', mar: 'Mar', mie: 'Mié', jue: 'Jue', vie: 'Vie', sab: 'Sáb', dom: 'Dom' };
+  const DAY_LONG = { lun: 'lunes', mar: 'martes', mie: 'miércoles', jue: 'jueves', vie: 'viernes', sab: 'sábado', dom: 'domingo' };
+  const h12 = (h) => `${h % 12 === 0 ? 12 : h % 12}${h < 12 ? 'am' : 'pm'}`;
+  let rid = q.get('r') || '';
+
+  const chg = (v) => (v == null ? '<span class="chg">primera semana</span>'
+    : `<span class="chg ${v >= 0 ? 'up' : 'down'}">${v >= 0 ? '▲' : '▼'} ${Math.abs(v)}% vs semana anterior</span>`);
+
+  function bars(values, labels, peakIdx) {
+    const max = Math.max(1, ...values);
+    return `<div class="bars">${values.map((v, i) => `
+      <div class="b ${i === peakIdx ? 'peak' : ''}" title="${esc(labels[i])}: ${v}">
+        ${v ? `<em>${v}</em>` : ''}<i style="height:${(v / max) * 100}%"></i><span>${esc(labels[i])}</span>
+      </div>`).join('')}</div>`;
+  }
+
+  function render(rep) {
+    $('title').textContent = `Lo que la IA hizo por ${rep.nombre}`;
+    $('sub').textContent = `Semana del ${rep.etiqueta}`;
+    if (!rep.conversaciones) {
+      $('out').innerHTML = '<div class="card"><p class="empty" style="padding:8px 0">Esta semana no entraron llamadas ni chats a la IA. Cuando lleguen, aquí verás pedidos, ventas y los platos más pedidos.</p></div>';
+      return;
+    }
+    const hrs = Math.floor(rep.minutos_atendidos / 60), mins = rep.minutos_atendidos % 60;
+    // Horas: mostramos solo el rango con movimiento (más 1 hora a cada lado)
+    const used = rep.horas.map((v, i) => (v ? i : null)).filter((i) => i != null);
+    const from = Math.max(0, Math.min(...used) - 1), to = Math.min(23, Math.max(...used) + 1);
+    const hourVals = rep.horas.slice(from, to + 1);
+    const hourLabels = hourVals.map((_, i) => h12(from + i));
+    const dayKeys = Object.keys(rep.dias);
+    const maxPlato = Math.max(1, ...rep.top_platos.map((p) => p.cantidad));
+
+    const insights = [];
+    if (rep.dia_pico) insights.push(`El día con más clientes fue el <b>${DAY_LONG[rep.dia_pico]}</b>${rep.hora_pico != null ? `, sobre todo a las <b>${h12(rep.hora_pico)}</b>` : ''}. Ten personal listo a esa hora.`);
+    if (rep.top_platos[0]) insights.push(`<b>${esc(rep.top_platos[0].nombre)}</b> fue lo más pedido (${rep.top_platos[0].cantidad}). Revisa que nunca se acabe.`);
+    if (rep.fuera_de_horario) insights.push(`<b>${rep.fuera_de_horario}</b> clientes llamaron fuera de horario: la IA les dio el horario en vez de dejarlos sin respuesta.`);
+    if (rep.clientes_que_repiten) insights.push(`<b>${rep.clientes_que_repiten}</b> clientes volvieron a pedir.`);
+    if (rep.transferidas) insights.push(`<b>${rep.transferidas}</b> conversaciones se pasaron a una persona (reclamos, catering o pedidos grandes).`);
+
+    $('out').innerHTML = `
+      <section class="hero">
+        <div class="card big"><small>Ventas tomadas por la IA</small><b>${money(rep.ventas)}</b>${chg(rep.comparacion.ventas)}</div>
+        <div class="card kpi"><small>Clientes atendidos</small><b>${rep.conversaciones}</b>
+          <div class="sub">📞 ${rep.llamadas} llamadas · 💬 ${rep.chats} chats</div><div class="sub">${chg(rep.comparacion.conversaciones)}</div></div>
+      </section>
+      <section class="kpis">
+        <div class="card kpi"><small>Pedidos</small><b>${rep.pedidos}</b><div class="sub">📞 ${rep.pedidos_telefono} · 💬 ${rep.pedidos_web}</div></div>
+        <div class="card kpi"><small>Ticket promedio</small><b>${money(rep.ticket_promedio)}</b></div>
+        <div class="card kpi"><small>Teléfono atendido por la IA</small><b>${hrs ? `${hrs} h ` : ''}${mins} min</b><div class="sub">tiempo que tu equipo no tuvo que contestar${rep.minutos_estimados ? ' (aprox.)' : ''}</div></div>
+        <div class="card kpi"><small>Clientes que repiten</small><b>${rep.clientes_que_repiten}</b><div class="sub">de ${rep.clientes} clientes con pedido</div></div>
+      </section>
+      ${insights.length ? `<section class="card insight" style="margin-bottom:14px"><b>💡 Lo que dicen los números</b><ul>${insights.map((i) => `<li>${i}</li>`).join('')}</ul></section>` : ''}
+      <section class="two">
+        <div class="card"><h3>Llamadas y chats por hora</h3>${bars(hourVals, hourLabels, rep.hora_pico != null ? rep.hora_pico - from : -1)}</div>
+        <div class="card"><h3>Por día</h3>${bars(dayKeys.map((d) => rep.dias[d]), dayKeys.map((d) => DAYS[d]), dayKeys.indexOf(rep.dia_pico))}</div>
+      </section>
+      <section class="card"><h3>Lo más pedido</h3>
+        ${rep.top_platos.length ? `<ul class="ranking">${rep.top_platos.map((p) => `
+          <li><span>${esc(p.nombre)}</span><span>${p.cantidad} · ${money(p.ingresos)}</span><div class="bar"><i style="width:${(p.cantidad / maxPlato) * 100}%"></i></div></li>`).join('')}</ul>`
+          : '<p class="empty">Todavía no hay pedidos esta semana.</p>'}
+      </section>`;
+  }
+
+  async function load(semana) {
+    const p = new URLSearchParams({ restaurante: rid });
+    if (semana) p.set('semana', semana);
+    if (signed) p.set('firma', signed);
+    const rep = await api(`/api/reporte?${p}`);
+    $('week').innerHTML = rep.semanas.map((s, i) => `<option value="${s}" ${s === rep.semana ? 'selected' : ''}>${i === 0 && !signed ? 'Esta semana (en curso)' : `Semana del ${s}`}</option>`).join('');
+    render(rep);
+    return rep;
+  }
+
+  $('week').onchange = (e) => load(e.target.value);
+  $('send').onclick = async () => {
+    $('send').disabled = true;
+    try {
+      const r = await api('/api/reporte/enviar', { method: 'POST', body: JSON.stringify({ restaurante: rid, semana: $('week').value }) });
+      alert(r.simulado ? `Twilio no está configurado, así que el SMS se imprimió en la terminal:\n\n${r.texto}` : 'Reporte enviado por SMS ✓');
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      $('send').disabled = false;
+    }
+  };
+
+  try {
+    if (signed) {
+      document.querySelector('.top').innerHTML = '<h1>Comanda <span>IA</span></h1>';
+      $('send').hidden = true;
+      $('week').hidden = true;
+      await load(q.get('semana'));
+    } else {
+      rid = await setupTop('reporte.html', (id) => { rid = id; load(); });
+      await load(q.get('semana'));
+    }
+  } catch (err) {
+    $('out').innerHTML = `<div class="card"><p>No se pudo cargar el reporte: ${esc(err.message)}</p></div>`;
+  }
+</script>
+</body>
+</html>

@@ -26,6 +26,8 @@ button.primary { background: var(--accent); color: #fff; border-color: var(--acc
 button.danger { color: var(--danger); }
 button:disabled { opacity: .5; cursor: default; }
 .tag { font-size: 12px; padding: 2px 8px; border-radius: 99px; background: var(--bg); border: 1px solid var(--line); }
+.tag.web { background: #e7f5ff; color: #1864ab; border-color: #a5d8ff; }
+@media (prefers-color-scheme: dark) { .tag.web { background: #10283d; color: #a5d8ff; border-color: #1864ab; } }
 .tag.sold { background: var(--danger); color: #fff; border-color: var(--danger); }
 .empty { color: var(--muted); padding: 20px 0; }
 .errors { background: #fff5f5; color: #a61e1e; border: 1px solid #ffc9c9; border-radius: 10px; padding: 10px 14px; }

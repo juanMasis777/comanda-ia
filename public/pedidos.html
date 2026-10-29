@@ -31,7 +31,7 @@
   <section id="calls"></section>
 </main>
 <script type="module">
-  import { api, esc, money, setupTop } from '/common.js';
+  import { api, esc, money, setupTop, originTag } from '/common.js';
 
   const $ = (id) => document.getElementById(id);
   const NEXT = { nuevo: 'preparando', preparando: 'listo', listo: 'entregado' };
@@ -51,14 +51,14 @@
     const [s, orders, calls] = await Promise.all([api('/api/estadisticas' + q), api('/api/pedidos' + q), api('/api/llamadas' + q)]);
 
     $('stats').innerHTML = [
-      ['Llamadas atendidas', s.llamadas], ['Pedidos tomados', s.pedidos], ['Ventas por teléfono', money(s.ventas)],
+      ['Conversaciones atendidas', s.llamadas], ['Pedidos tomados', s.pedidos], ['Ventas con IA', money(s.ventas)],
       ['Ticket promedio', money(s.ticket_promedio)], ['Fuera de horario', s.fuera_de_horario], ['Pasadas a una persona', s.transferidas],
     ].map(([k, v]) => `<div class="card stat"><b>${v}</b><small>${k}</small></div>`).join('');
 
     $('orders').innerHTML = orders.length ? orders.slice(0, 30).map((o) => `
       <article class="card order ${esc(o.estado)}">
         <div class="head"><h3>#${esc(o.numero)} · ${esc(o.cliente)}</h3><span class="tag">${esc(o.estado)}</span></div>
-        <div class="meta">Recoge ${esc(o.listo_a_las)} · ${esc(o.telefono || '')}</div>
+        <div class="meta">${originTag(o.origen)} Recoge ${esc(o.listo_a_las)} · ${esc(o.telefono || '')}</div>
         <ul>${o.lineas.map((l) => `<li>${line(l)}</li>`).join('')}</ul>
         <b>${money(o.total)}</b>
         <div class="btns">
@@ -70,7 +70,7 @@
     $('calls').innerHTML = calls.length ? calls.slice(0, 30).map((c) => `
       <details class="card call">
         <summary>${esc(new Date(c.inicio).toLocaleString('es-US'))} · ${esc(c.telefono || 'desconocido')}
-          <span class="tag">${esc(c.resultado)}</span>${c.idioma === 'en' ? ' <span class="tag">inglés</span>' : ''}</summary>
+          ${originTag(c.canal)} <span class="tag">${esc(c.resultado)}</span>${c.idioma === 'en' ? ' <span class="tag">inglés</span>' : ''}</summary>
         ${(c.conversacion || []).map((m) => `<p class="msg ${esc(m.rol)}"><b>${m.rol === 'cliente' ? 'Cliente' : 'IA'}:</b> ${esc(m.texto)}</p>`).join('')}
       </details>`).join('') : '<p class="empty">Todavía no hay llamadas.</p>';
   }
@@ -83,7 +83,7 @@
   });
 
   try {
-    restaurante = await setupTop('index.html', (id) => { restaurante = id; load(); });
+    restaurante = await setupTop('pedidos.html', (id) => { restaurante = id; load(); });
     await load();
     setInterval(load, 5000);
   } catch {

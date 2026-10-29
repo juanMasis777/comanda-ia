@@ -8,9 +8,18 @@ import { sendSms as defaultSendSms } from './notify.js';
 
 const MAX_TOOL_ROUNDS = 6;
 
+/** "(305) 555-1234" → "+13055551234". Devuelve null si no es un número de EE.UU. válido. */
+export function normalizePhone(text) {
+  const digits = String(text ?? '').replace(/\D/g, '');
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
+  return null;
+}
+
 export class Agent {
-  constructor({ restaurant, callerPhone, client, store = defaultStore, sendSms = defaultSendSms, onLanguage, date } = {}) {
+  constructor({ restaurant, callerPhone, client, store = defaultStore, sendSms = defaultSendSms, onLanguage, date, canal = 'voz' } = {}) {
     this.r = restaurant;
+    this.canal = canal; // 'voz' (teléfono) o 'chat' (página web)
     this.callerPhone = callerPhone;
     this.client = client ?? new Anthropic();
     this.model = process.env.CLAUDE_MODEL || 'claude-haiku-5-5';
@@ -25,7 +34,7 @@ export class Agent {
     this.language = 'es';
     this.pendingAction = null; // { type: 'transfer' | 'end', motivo }
     this.system = [
-      { type: 'text', text: systemPrompt(restaurant, { callerPhone, date }), cache_control: { type: 'ephemeral' } },
+      { type: 'text', text: systemPrompt(restaurant, { callerPhone, date, canal }), cache_control: { type: 'ephemeral' } },
     ];
     this.currentStream = null;
   }
@@ -56,6 +65,7 @@ export class Agent {
       // decimos una muletilla al instante para que el cliente no escuche silencio.
       stream.on('streamEvent', (event) => {
         if (
+          this.canal === 'voz' &&
           !spoken &&
           event.type === 'content_block_start' &&
           event.content_block?.type === 'tool_use' &&
@@ -121,7 +131,7 @@ export class Agent {
         return { ok: true, pedido: this.order.summary() };
 
       case 'confirmar_pedido':
-        return this.confirm(input.nombre_cliente);
+        return this.confirm(input.nombre_cliente, input.telefono);
 
       case 'cambiar_idioma': {
         const idioma = input.idioma === 'en' ? 'en' : 'es';
@@ -132,6 +142,9 @@ export class Agent {
 
       case 'transferir_a_humano':
         this.pendingAction = { type: 'transfer', motivo: input.motivo ?? '' };
+        if (this.canal === 'chat') {
+          return { ok: true, instruccion: `Dile al cliente que para eso es mejor hablar con el restaurante y dale el teléfono: ${this.r.telefono_transferencia || 'el del restaurante'}.` };
+        }
         return { ok: true, instruccion: 'Dile al cliente en una frase que lo vas a comunicar con una persona. No digas nada más después.' };
 
       case 'terminar_llamada':
@@ -143,8 +156,13 @@ export class Agent {
     }
   }
 
-  async confirm(nombre) {
+  async confirm(nombre, telefono) {
     if (this.confirmed) return { ok: true, ya_confirmado: true, ...this.confirmed };
+    if (this.canal === 'chat') {
+      const phone = normalizePhone(telefono);
+      if (!phone) return { ok: false, error: 'Falta un teléfono válido de 10 dígitos. Pídeselo al cliente.' };
+      this.callerPhone = phone;
+    }
     if (this.order.isEmpty) return { ok: false, error: 'El pedido está vacío.' };
     if (!openStatus(this.r, this.date).open) return { ok: false, error: 'El restaurante está cerrado.' };
 
@@ -153,6 +171,7 @@ export class Agent {
     const totals = this.order.totals();
     const saved = this.store.saveOrder({
       restaurante: this.r.id,
+      origen: this.canal === 'chat' ? 'web' : 'telefono',
       cliente,
       telefono: this.callerPhone ?? null,
       listo_a_las: listo,
@@ -182,6 +201,7 @@ export class Agent {
   callRecord(extra = {}) {
     return {
       restaurante: this.r.id,
+      canal: this.canal === 'chat' ? 'web' : 'telefono',
       telefono: this.callerPhone ?? null,
       idioma: this.language,
       fuera_de_horario: !openStatus(this.r, this.date).open,

@@ -59,6 +59,18 @@ export function listRestaurants() {
   return [...restaurants.values()].map((r) => ({ id: r.id, nombre: r.nombre }));
 }
 
+/** Todos los datos (solo para uso interno del servidor). */
+export function listRestaurantsFull() {
+  return [...restaurants.values()];
+}
+
+/** Quita los datos secretos antes de mandarlos al navegador. */
+export function publicView(r) {
+  if (!r) return r;
+  const { acceso_hash, ...rest } = r;
+  return { ...rest, tiene_acceso_dueno: Boolean(acceso_hash) };
+}
+
 /** Valida y guarda. Devuelve { ok, restaurante } o { ok: false, errores }. */
 export function saveRestaurant(data) {
   const errores = validateRestaurant(data);

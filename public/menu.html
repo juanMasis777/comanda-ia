@@ -59,6 +59,9 @@
     <div class="help">Formato 11:00-21:00. Si abre en dos turnos: 11:00-15:00, 17:00-22:00. Vacío = cerrado.</div>
   </section>
 
+  <h2>Chat en tu página y reporte semanal</h2>
+  <section class="card grid" id="extras"></section>
+
   <h2>Menú</h2>
   <div class="toolbar">
     <input id="search" placeholder="Buscar plato…" />
@@ -130,6 +133,65 @@
     else if (k === 'politicas') r.politicas = e.target.value.split('\n').map((s) => s.trim()).filter(Boolean);
     else r[k] = e.target.value.trim();
     setDirty();
+  });
+
+  // ── Chat web, reporte semanal y acceso del dueño ──
+  let isAdmin = false;
+  function renderExtras() {
+    const origin = location.origin;
+    const snippet = `<script src="${origin}/widget.js" data-restaurante="${r.id}" async><\/script>`;
+    $('extras').innerHTML = `
+      <label class="chk"><input type="checkbox" data-x="chat_web" ${r.chat_web !== false ? 'checked' : ''} /> Chat para ordenar en la página web</label>
+      <label class="field">Color del chat<input type="color" data-x="color_chat" value="${esc(r.color_chat || '#d9480f')}" style="height:38px;padding:3px" /></label>
+      <label class="chk"><input type="checkbox" data-x="reporte_semanal" ${r.reporte_semanal ? 'checked' : ''} /> Enviar reporte cada lunes por SMS</label>
+      <label class="field">Celular del dueño (para el reporte)<input data-x="telefono_dueno" value="${esc(r.telefono_dueno || '')}" placeholder="+13055551234" /></label>
+      <label class="field">Correo del dueño<input data-x="email_dueno" value="${esc(r.email_dueno || '')}" placeholder="dueno@restaurante.com" /></label>
+      <div class="field" style="grid-column:1/-1">Para poner el chat en la página del restaurante, pega esta línea antes de &lt;/body&gt;:
+        <div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap">
+          <input id="snippet" readonly value="${esc(snippet)}" style="font-family:monospace;font-size:13px;flex:1;min-width:220px" />
+          <button id="copySnippet" type="button">Copiar</button>
+          <a href="/demo-restaurante.html?r=${encodeURIComponent(r.id)}" target="_blank"><button type="button">Ver cómo se ve</button></a>
+        </div>
+        <div class="help">Funciona en WordPress, Wix, Squarespace o cualquier página. En Wix se pega en "Código personalizado".</div>
+      </div>
+      ${isAdmin ? `<div class="field" style="grid-column:1/-1">Acceso del dueño: ${r.tiene_acceso_dueno ? 'ya tiene enlace.' : 'todavía no tiene enlace.'}
+        <div style="margin-top:6px"><button id="ownerLink" type="button">${r.tiene_acceso_dueno ? 'Crear enlace nuevo (el anterior deja de servir)' : 'Crear enlace para el dueño'}</button>
+        <input id="ownerLinkOut" readonly hidden style="margin-top:6px;font-family:monospace;font-size:13px" /></div>
+        <div class="help">Con ese enlace el dueño entra a su panel y solo ve su restaurante.</div></div>` : ''}`;
+  }
+
+  $('extras').addEventListener('input', (e) => {
+    const k = e.target.dataset.x;
+    if (!k) return;
+    if (e.target.type === 'checkbox') r[k] = e.target.checked;
+    else if (e.target.value.trim()) r[k] = e.target.value.trim();
+    else delete r[k];
+    setDirty();
+  });
+
+  $('extras').addEventListener('click', async (e) => {
+    if (e.target.id === 'copySnippet') {
+      const el = $('snippet');
+      el.select();
+      try { await navigator.clipboard.writeText(el.value); } catch { document.execCommand('copy'); }
+      e.target.textContent = '¡Copiado!';
+      setTimeout(() => (e.target.textContent = 'Copiar'), 1500);
+    }
+    if (e.target.id === 'ownerLink') {
+      if (r.tiene_acceso_dueno && !confirm('El enlace anterior dejará de funcionar. ¿Crear uno nuevo?')) return;
+      try {
+        const data = await api(`/api/restaurantes/${encodeURIComponent(rid)}/acceso`, { method: 'POST' });
+        const out = $('ownerLinkOut');
+        out.hidden = false;
+        out.value = data.enlace;
+        out.select();
+        r.tiene_acceso_dueno = saved.tiene_acceso_dueno = true;
+        $('status').className = 'status ok';
+        $('status').textContent = 'Enlace creado. Cópialo y mándaselo al dueño: no se vuelve a mostrar.';
+      } catch (err) {
+        showErrors(err.errores);
+      }
+    }
   });
 
   // ── Horario ──
@@ -271,6 +333,7 @@
   function buildPayload() {
     const errors = [];
     const out = structuredClone(r);
+    delete out.tiene_acceso_dueno;
     const horario = {};
     for (const input of $('hours').querySelectorAll('input')) {
       try { horario[input.dataset.day] = parseHours(input.value); }
@@ -391,6 +454,7 @@
     open.clear();
     renderInfo();
     renderHours();
+    renderExtras();
     renderMenu();
     setDirty(false);
   }
@@ -401,6 +465,7 @@
   }
 
   try {
+    isAdmin = Boolean((await api('/api/yo')).admin);
     const id = await setupTop('menu.html', (newId) => {
       if (dirty && !confirm('Tienes cambios sin guardar. ¿Cambiar de restaurante y perderlos?')) return;
       fetchRestaurant(newId);

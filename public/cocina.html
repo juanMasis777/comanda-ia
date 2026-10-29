@@ -61,7 +61,7 @@
 <iframe id="printer" title="Imprimir" style="position:absolute;width:0;height:0;border:0;visibility:hidden"></iframe>
 
 <script type="module">
-  import { api, esc, money, setupTop } from '/common.js';
+  import { api, esc, money, setupTop, originTag } from '/common.js';
 
   const $ = (id) => document.getElementById(id);
   const NEXT = { nuevo: ['preparando', 'Empezar'], preparando: ['listo', 'Listo ✓'], listo: ['entregado', 'Entregado'] };
@@ -116,7 +116,7 @@
     return `
       <article class="card ticket ${isNew ? 'flash' : ''}">
         <div class="head"><span class="num">#${esc(o.numero)}</span><span class="when ${late ? 'late' : ''}">hace ${ago} min</span></div>
-        <div class="who">${esc(o.cliente)}</div>
+        <div class="who">${esc(o.cliente)} ${originTag(o.origen)}</div>
         <div class="when">Recoge ${esc(o.listo_a_las)}${o.telefono ? ' · ' + esc(o.telefono) : ''}</div>
         <ul>${o.lineas.map(lineHtml).join('')}</ul>
         <div class="when" style="margin-bottom:10px">Total ${money(o.total)}</div>

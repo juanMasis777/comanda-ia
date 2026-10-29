@@ -17,7 +17,8 @@ export async function api(url, opts = {}) {
 
 export const esc = (s) =>
   String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-export const money = (n) => '$' + Number(n || 0).toFixed(2);
+export const money = (n) => '$' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+export const originTag = (o) => (o === 'web' ? '<span class="tag web">💬 Web</span>' : '<span class="tag">📞 Teléfono</span>');
 
 export function describeLine(l) {
   const opts = Object.values(l.opciones || {});
@@ -41,7 +42,7 @@ export async function setupTop(active, onChange) {
   const render = () => {
     top.innerHTML = `
       <h1>Comanda <span>IA</span></h1>
-      <nav>${link('index.html', 'Pedidos')}${link('menu.html', 'Menú')}${link('cocina.html', 'Cocina')}</nav>
+      <nav>${link('pedidos.html', 'Pedidos')}${link('cocina.html', 'Cocina')}${link('menu.html', 'Menú')}${link('reporte.html', 'Reporte')}</nav>
       <select id="rest" aria-label="Restaurante" style="width:auto">${list
         .map((r) => `<option value="${esc(r.id)}" ${r.id === current ? 'selected' : ''}>${esc(r.nombre)}</option>`)
         .join('')}</select>`;
