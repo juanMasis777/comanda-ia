@@ -50,11 +50,14 @@ export function chatRoutes({ createChatAgent, chatStore = store } = {}) {
     const rest = findRestaurant(String(req.query.restaurante ?? ''));
     if (!chatEnabled(rest)) return res.status(404).json({ errores: ['Chat no disponible.'] });
     const status = openStatus(rest);
+    const en = req.query.lang === 'en';
     res.json({
       nombre: rest.nombre,
-      saludo: greeting(rest, 'chat'),
+      saludo: en ? `Hi! 👋 Welcome to ${rest.nombre}. What would you like to order today?` : greeting(rest, 'chat'),
       abierto: status.open,
-      estado: status.open ? `Abierto · cierra ${status.closesAt}` : `Cerrado · abre ${status.nextOpen ?? 'pronto'}`,
+      estado: en
+        ? (status.open ? 'Open now' : 'Closed right now')
+        : status.open ? `Abierto · cierra ${status.closesAt}` : `Cerrado · abre ${status.nextOpen ?? 'pronto'}`,
       color: rest.color_chat || '#d9480f',
       telefono: rest.telefono_transferencia || null,
       direccion: rest.direccion,

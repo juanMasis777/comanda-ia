@@ -2,7 +2,7 @@
  * Comanda IA · Chat para ordenar
  * Pega esta línea en la página del restaurante (antes de </body>):
  *   <script src="https://TU-SERVIDOR/widget.js" data-restaurante="el-rincon-latino" async></script>
- * Opcional: data-color="#d9480f"  data-texto="Ordenar aquí"  data-posicion="izquierda"
+ * Opcional: data-color="#d9480f"  data-texto="Ordenar aquí"  data-posicion="izquierda"  data-lang="en"
  */
 (() => {
   const script = document.currentScript;
@@ -13,7 +13,18 @@
   const RID = script.dataset.restaurante;
   if (!RID) return console.warn('[Comanda IA] Falta data-restaurante en el <script>.');
   const LEFT = script.dataset.posicion === 'izquierda';
-  const LABEL = script.dataset.texto || 'Ordenar aquí';
+  const LANG = script.dataset.lang === 'en' ? 'en' : 'es';
+  const TXT = {
+    es: { label: 'Ordenar aquí', loading: 'Cargando…', close: 'Cerrar', dialog: 'Chat para ordenar', placeholder: 'Escribe tu pedido…', msg: 'Mensaje', send: 'Enviar',
+      again: 'Hacer otro pedido', foot: 'Asistente con IA · Comanda IA', sent: '✅ Pedido enviado a la cocina', total: 'Total', ready: 'listo como a las',
+      fail: 'No se pudo enviar. Intenta otra vez.', offline: 'Sin conexión. Revisa tu internet e intenta otra vez.',
+      chips: ['¿Qué me recomiendas?', 'Quiero ordenar para recoger', '¿A qué hora cierran?'] },
+    en: { label: 'Order here', loading: 'Loading…', close: 'Close', dialog: 'Ordering chat', placeholder: 'Type your order…', msg: 'Message', send: 'Send',
+      again: 'Place another order', foot: 'AI assistant · Comanda IA', sent: '✅ Order sent to the kitchen', total: 'Total', ready: 'ready around',
+      fail: 'Couldn\'t send. Please try again.', offline: 'No connection. Check your internet and try again.',
+      chips: ['What do you recommend?', 'I want to order for pickup', 'What time do you close?'] },
+  }[LANG];
+  const LABEL = script.dataset.texto || TXT.label;
   const KEY = `comanda-ia:${RID}`;
   const TTL = 30 * 60 * 1000;
 
@@ -86,17 +97,17 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11h18M5 11a7 7 0 0 1 14 0M12 4V3M4 15h16l-1.5 4h-13z"/></svg>
     <span>${LABEL}</span>
   </button>
-  <section class="panel" role="dialog" aria-label="Chat para ordenar">
+  <section class="panel" role="dialog" aria-label="${TXT.dialog}">
     <header>
-      <div class="t"><b class="name">Cargando…</b><small><i class="dot"></i><span class="st"></span></small></div>
-      <button class="x" aria-label="Cerrar">✕</button>
+      <div class="t"><b class="name">${TXT.loading}</b><small><i class="dot"></i><span class="st"></span></small></div>
+      <button class="x" aria-label="${TXT.close}">✕</button>
     </header>
     <div class="msgs" aria-live="polite"></div>
     <div class="chips"></div>
-    <button class="new" hidden>Hacer otro pedido</button>
-    <form><input placeholder="Escribe tu pedido…" aria-label="Mensaje" maxlength="500" autocomplete="off" /><button aria-label="Enviar">
+    <button class="new" hidden>${TXT.again}</button>
+    <form><input placeholder="${TXT.placeholder}" aria-label="${TXT.msg}" maxlength="500" autocomplete="off" /><button aria-label="${TXT.send}">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></form>
-    <div class="foot">Asistente con IA · Comanda IA</div>
+    <div class="foot">${TXT.foot}</div>
   </section>`;
 
   const $ = (s) => root.querySelector(s);
@@ -132,7 +143,7 @@
   function addOrder(p, save = true) {
     const d = document.createElement('div');
     d.className = 'order';
-    d.innerHTML = `✅ Pedido enviado a la cocina<b>#${esc(p.numero)}</b>Total ${money(p.total)} · listo como a las ${esc(p.listo_a_las)}`;
+    d.innerHTML = `${TXT.sent}<b>#${esc(p.numero)}</b>${TXT.total} ${money(p.total)} · ${TXT.ready} ${esc(p.listo_a_las)}`;
     msgs.appendChild(d);
     msgs.scrollTop = msgs.scrollHeight;
     if (save) { state.mensajes.push({ tipo: 'pedido', pedido: p }); persist(); }
@@ -160,7 +171,7 @@
       const data = await res.json().catch(() => ({}));
       typing.remove();
       if (!res.ok) {
-        addBubble('err', data.respuesta || (data.errores || ['No se pudo enviar. Intenta otra vez.']).join(' '));
+        addBubble('err', data.respuesta || (data.errores || [TXT.fail]).join(' '));
       } else {
         if (data.respuesta) addBubble('ia', data.respuesta);
         const already = state.mensajes.some((m) => m.tipo === 'pedido' && m.pedido.numero === data.pedido?.numero);
@@ -169,7 +180,7 @@
       }
     } catch {
       typing.remove();
-      addBubble('err', 'Sin conexión. Revisa tu internet e intenta otra vez.');
+      addBubble('err', TXT.offline);
     } finally {
       busy = false;
       sendBtn.disabled = false;
@@ -199,12 +210,12 @@
     input.focus();
   };
 
-  const suggestions = ['¿Qué me recomiendas?', 'Quiero ordenar para recoger', '¿A qué hora cierran?'];
+  const suggestions = TXT.chips;
   chips.innerHTML = suggestions.map((s) => `<button type="button">${esc(s)}</button>`).join('');
   chips.onclick = (e) => { if (e.target.tagName === 'BUTTON') send(e.target.textContent); };
 
   // ── Configuración del restaurante ──
-  fetch(`${API}/api/chat/config?restaurante=${encodeURIComponent(RID)}`)
+  fetch(`${API}/api/chat/config?restaurante=${encodeURIComponent(RID)}&lang=${LANG}`)
     .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
     .then((c) => {
       config = c;

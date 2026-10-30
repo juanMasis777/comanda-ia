@@ -22,10 +22,10 @@
   }
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
-  body { margin: 0; font: 400 18px/1.55 var(--display); font-variation-settings: "wdth" 100; color: var(--tinta); background: var(--papel); }
+  body { margin: 0; font: 400 clamp(17px, 1.05vw + 4px, 20px)/1.55 var(--display); font-variation-settings: "wdth" 100; color: var(--tinta); background: var(--papel); }
   a { color: inherit; }
   :focus-visible { outline: 3px solid var(--maracuya); outline-offset: 3px; border-radius: 6px; }
-  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+  .wrap { max-width: 1400px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 64px); }
 
   /* ── Barra ── */
   .nav { background: var(--platano); color: var(--nube); }
@@ -35,7 +35,11 @@
   .nav nav { display: flex; gap: 22px; font-size: 16px; }
   .nav nav a { text-decoration: none; opacity: .85; }
   .nav nav a:hover { opacity: 1; }
-  @media (max-width: 720px) { .nav nav { display: none; } }
+  @media (max-width: 860px) { .nav nav { display: none; } }
+  .navright { display: flex; align-items: center; gap: 26px; }
+  .lang { display: flex; border: 1px solid rgba(233,239,233,.4); border-radius: 999px; padding: 3px; }
+  .lang button { font: 700 14px var(--display); color: var(--nube); background: transparent; border: 0; border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+  .lang button[aria-pressed="true"] { background: var(--maracuya); color: var(--tinta); }
 
   /* ── Botones ── */
   .btn { display: inline-flex; align-items: center; gap: 10px; font: 700 17px var(--display); border-radius: 14px; padding: 15px 22px; text-decoration: none; border: 2px solid transparent; cursor: pointer; }
@@ -47,24 +51,25 @@
   .btn svg { width: 20px; height: 20px; flex: none; }
 
   /* ── Hero ── */
-  .hero { background: var(--platano); color: var(--nube); padding: 56px 0 0; overflow: hidden; }
-  .hero .wrap { display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: end; }
+  .hero { background: var(--platano); color: var(--nube); padding: 40px 0 0; overflow: hidden; min-height: calc(100svh - 68px); display: flex; }
+  .hero .wrap { display: grid; grid-template-columns: 1.15fr .85fr; gap: clamp(36px, 5vw, 96px); align-items: center; width: 100%; }
+  .hero .copy { padding: 32px 0 56px; }
   @media (max-width: 900px) { .hero .wrap { grid-template-columns: 1fr; gap: 36px; } }
-  .hero h1 { font-size: clamp(42px, 6.4vw, 84px); line-height: .95; margin: 0 0 22px; color: #fff; font-weight: 800; font-variation-settings: "wdth" 78; letter-spacing: -.02em; }
+  .hero h1 { font-size: clamp(44px, 6.6vw, 118px); line-height: .95; margin: 0 0 22px; color: #fff; font-weight: 800; font-variation-settings: "wdth" 78; letter-spacing: -.02em; }
   .hero h1 small { display: block; font-size: .5em; line-height: 1.1; color: var(--maracuya); font-weight: 700; margin-top: 14px; font-variation-settings: "wdth" 90; letter-spacing: -.01em; }
-  .hero p { font-size: 20px; max-width: 34em; margin: 0 0 28px; }
+  .hero p { font-size: clamp(19px, 1.4vw, 24px); max-width: 32em; margin: 0 0 28px; }
   .hero .ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
-  .hero .fine { font-size: 15px; opacity: .75; margin: 0 0 56px; }
+  .hero .fine { font-size: 15px; opacity: .75; margin: 0; }
 
   /* El ticket que se imprime */
-  .printer { align-self: end; justify-self: center; width: min(400px, 100%); position: relative; }
+  .printer { align-self: end; justify-self: center; width: min(470px, 100%); position: relative; }
   .slot { height: 18px; background: #0a2219; border-radius: 10px 10px 0 0; box-shadow: inset 0 -6px 8px rgba(0,0,0,.4); }
-  .ticket { background: var(--papel); color: var(--tinta); font: 13px/1.5 var(--mono); padding: 20px 20px 26px; margin: 0 14px; position: relative;
+  .ticket { background: var(--papel); color: var(--tinta); font: clamp(13px, .95vw, 15px)/1.5 var(--mono); padding: 24px 24px 30px; margin: 0 14px; position: relative;
     --tear: linear-gradient(-45deg, transparent 8px, var(--papel) 0) 0 100% / 16px 16px repeat-x, linear-gradient(45deg, transparent 8px, var(--papel) 0) 0 100% / 16px 16px repeat-x; }
   .ticket::after { content: ""; position: absolute; left: 0; right: 0; bottom: -8px; height: 8px;
     background: linear-gradient(-45deg, transparent 6px, var(--papel) 0) 0 0 / 12px 12px repeat-x, linear-gradient(45deg, transparent 6px, var(--papel) 0) 0 0 / 12px 12px repeat-x; }
   .ticket .call { border-bottom: 1px dashed #b9c4bd; padding-bottom: 12px; margin-bottom: 12px; }
-  .ticket .line { margin: 0 0 6px; font-size: 13px; }
+  .ticket .line { margin: 0 0 6px; }
   .ticket .who { font-weight: 600; }
   .ticket .ia { color: var(--hoja); }
   .ticket h3 { font: 600 20px var(--mono); margin: 0 0 4px; text-align: center; }
@@ -82,9 +87,9 @@
   }
 
   /* ── Secciones ── */
-  section.block { padding: 96px 0; }
-  section.block h2 { font-size: clamp(32px, 4.4vw, 54px); line-height: 1.02; margin: 0 0 16px; font-weight: 800; font-variation-settings: "wdth" 82; letter-spacing: -.015em; max-width: 16em; }
-  .lead { font-size: 20px; max-width: 36em; margin: 0 0 48px; color: #3b5249; }
+  section.block { padding: clamp(72px, 9vw, 140px) 0; }
+  section.block h2 { font-size: clamp(34px, 4.6vw, 72px); line-height: 1.02; margin: 0 0 16px; font-weight: 800; font-variation-settings: "wdth" 82; letter-spacing: -.015em; max-width: 16em; }
+  .lead { font-size: clamp(19px, 1.3vw, 23px); max-width: 38em; margin: 0 0 48px; color: #3b5249; }
 
   /* Pasos (sí es una secuencia) */
   .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border-top: 3px solid var(--tinta); }
@@ -92,8 +97,8 @@
   .steps li { list-style: none; padding: 26px 26px 10px 0; }
   .steps li + li { padding-left: 26px; border-left: 1px solid #d5ddd7; }
   @media (max-width: 820px) { .steps li + li { padding-left: 0; border-left: 0; border-top: 1px solid #d5ddd7; } }
-  .steps b { display: block; font-size: 54px; line-height: 1; font-weight: 800; color: var(--hoja); font-variation-settings: "wdth" 75; margin-bottom: 14px; }
-  .steps h3 { font-size: 24px; margin: 0 0 8px; line-height: 1.15; }
+  .steps b { display: block; font-size: clamp(54px, 5vw, 84px); line-height: 1; font-weight: 800; color: var(--hoja); font-variation-settings: "wdth" 75; margin-bottom: 14px; }
+  .steps h3 { font-size: clamp(22px, 1.8vw, 30px); margin: 0 0 8px; line-height: 1.15; }
   .steps p { margin: 0; color: #3b5249; }
   ol.steps { padding: 0; margin: 0; }
 
@@ -115,22 +120,27 @@
   .does { background: var(--platano); color: var(--nube); }
   .does h2 { color: #fff; }
   .does .lead { color: var(--nube); opacity: .85; }
-  .list { display: grid; grid-template-columns: 1fr 1fr; gap: 0 56px; }
+  .list { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 56px; }
+  @media (max-width: 1100px) { .list { grid-template-columns: 1fr 1fr; } }
   @media (max-width: 820px) { .list { grid-template-columns: 1fr; } }
   .list div { border-top: 1px solid rgba(233,239,233,.2); padding: 22px 0; }
-  .list h3 { color: #fff; font-size: 22px; margin: 0 0 6px; }
+  .list h3 { color: #fff; font-size: clamp(21px, 1.6vw, 27px); margin: 0 0 6px; }
   .list p { margin: 0; opacity: .85; }
 
   /* Prueba */
   .try .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
   @media (max-width: 820px) { .try .grid { grid-template-columns: 1fr; } }
-  .try .box { border: 3px solid var(--tinta); border-radius: 22px; padding: 30px; }
-  .try .box h3 { font-size: 28px; margin: 0 0 8px; line-height: 1.1; }
+  .try .box { border: 3px solid var(--tinta); border-radius: 22px; padding: clamp(28px, 3vw, 48px); }
+  .try .box h3 { font-size: clamp(26px, 2.2vw, 36px); margin: 0 0 8px; line-height: 1.1; }
   .try .box p { color: #3b5249; margin: 0 0 22px; }
   .tel { font: 800 34px var(--display); font-variation-settings: "wdth" 80; text-decoration: none; display: block; margin-bottom: 6px; }
 
   /* Precios: dos tickets */
-  .prices { display: grid; grid-template-columns: repeat(2, minmax(0, 420px)); gap: 28px; justify-content: start; }
+  .split { display: grid; grid-template-columns: .8fr 1.2fr; gap: clamp(40px, 6vw, 110px); align-items: start; }
+  @media (max-width: 980px) { .split { grid-template-columns: 1fr; } }
+  .split .side { position: sticky; top: 30px; }
+  .split .side .lead { margin-bottom: 20px; }
+  .prices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; }
   @media (max-width: 820px) { .prices { grid-template-columns: 1fr; } }
   .price { background: #fff; border: 2px solid var(--tinta); border-radius: 6px; padding: 28px 28px 30px; position: relative; font-size: 17px; }
   .price.pro { background: var(--papel); box-shadow: 10px 10px 0 var(--maracuya); }
@@ -144,16 +154,19 @@
   .small { font-size: 15px; color: #4d6158; margin-top: 30px; max-width: 46em; }
 
   /* Preguntas */
-  .faq details { border-top: 1px solid #d5ddd7; padding: 18px 0; max-width: 780px; }
+  .faq details { border-top: 1px solid #d5ddd7; padding: 20px 0; }
   .faq details:last-child { border-bottom: 1px solid #d5ddd7; }
-  .faq summary { font-size: 21px; font-weight: 700; cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
+  .faq summary { font-size: clamp(20px, 1.5vw, 25px); font-weight: 700; cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 16px; }
   .faq summary::after { content: "+"; font-size: 28px; line-height: 1; color: var(--hoja); }
   .faq details[open] summary::after { content: "–"; }
   .faq p { margin: 10px 0 0; color: #3b5249; max-width: 40em; }
 
   /* Cierre */
-  .end { background: var(--platano); color: var(--nube); padding: 90px 0; }
-  .end h2 { color: #fff; font-size: clamp(34px, 5vw, 62px); line-height: 1; margin: 0 0 18px; font-weight: 800; font-variation-settings: "wdth" 78; }
+  .end { background: var(--platano); color: var(--nube); padding: clamp(80px, 10vw, 150px) 0; }
+  .end .wrap { display: grid; grid-template-columns: 1.3fr .7fr; gap: 48px; align-items: end; }
+  @media (max-width: 900px) { .end .wrap { grid-template-columns: 1fr; } }
+  .end .ctas { flex-direction: column; align-items: stretch; }
+  .end h2 { color: #fff; font-size: clamp(36px, 5.4vw, 88px); line-height: 1; margin: 0 0 18px; font-weight: 800; font-variation-settings: "wdth" 78; }
   .end p { font-size: 20px; margin: 0 0 28px; max-width: 32em; }
   .end .ctas { display: flex; gap: 12px; flex-wrap: wrap; }
   footer { background: #0c271e; color: #9fb3a9; font-size: 15px; padding: 24px 0; }
@@ -165,42 +178,48 @@
 <header class="nav">
   <div class="wrap">
     <a class="logo" href="/">Comanda <span>IA</span></a>
-    <nav><a href="#como">Cómo funciona</a><a href="#calculadora">Calculadora</a><a href="#probar">Pruébalo</a><a href="#precios">Precios</a></nav>
+    <div class="navright">
+      <nav><a href="#como" data-i18n="nav1">Cómo funciona</a><a href="#calculadora" data-i18n="nav2">Calculadora</a><a href="#probar" data-i18n="nav3">Pruébalo</a><a href="#precios" data-i18n="nav4">Precios</a></nav>
+      <div class="lang" role="group" aria-label="Idioma / Language">
+        <button type="button" data-lang="es" aria-pressed="true">ES</button>
+        <button type="button" data-lang="en" aria-pressed="false">EN</button>
+      </div>
+    </div>
   </div>
 </header>
 
 <section class="hero">
   <div class="wrap">
-    <div>
-      <h1>Tu restaurante contesta todas las llamadas.<small>Hasta un viernes a las 8 con la cocina llena.</small></h1>
-      <p>Un asistente con inteligencia artificial que atiende el teléfono en español y en inglés, toma el pedido completo sin inventar precios y lo manda directo a la cocina.</p>
+    <div class="copy">
+      <h1 data-i18n="h1">Tu restaurante contesta todas las llamadas.<small>Hasta un viernes a las 8 con la cocina llena.</small></h1>
+      <p data-i18n="heroP">Un asistente con inteligencia artificial que atiende el teléfono en español y en inglés, toma el pedido completo sin inventar precios y lo manda directo a la cocina.</p>
       <div class="ctas">
         <a class="btn yellow" id="heroCall" href="#probar">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>
           <span id="heroCallText">Escuchar cómo contesta</span></a>
-        <a class="btn ghost" href="#" data-open-chat>Probar el chat</a>
+        <a class="btn ghost" href="#" data-open-chat data-i18n="tryChat">Probar el chat</a>
       </div>
-      <p class="fine">Mantienes tu número de siempre. Lo instalamos en tu restaurante en una visita.</p>
+      <p class="fine" data-i18n="heroFine">Mantienes tu número de siempre. Lo instalamos en tu restaurante en una visita.</p>
     </div>
 
-    <div class="printer" aria-label="Ejemplo de una llamada convertida en pedido">
+    <div class="printer" aria-hidden="true">
       <div class="slot"></div>
       <div class="ticket">
         <div class="call">
-          <p class="line step" style="--i:0"><span class="who">Cliente:</span> Hola, ¿me da dos fritangas para llevar? Una con maduras.</p>
-          <p class="line step ia" style="--i:1"><span class="who">IA:</span> ¡Perfecto! ¿Y la otra con maduras o verdes?</p>
-          <p class="line step" style="--i:2"><span class="who">Cliente:</span> Verdes. Y un batido de pitahaya grande.</p>
-          <p class="line step ia" style="--i:3"><span class="who">IA:</span> Son $41.71 con impuesto. ¿A nombre de quién?</p>
-          <p class="line step" style="--i:4"><span class="who">Cliente:</span> Marisol.</p>
+          <p class="line step" style="--i:0" data-i18n="t1"><span class="who">Cliente:</span> Hola, ¿me da dos fritangas para llevar? Una con maduras.</p>
+          <p class="line step ia" style="--i:1" data-i18n="t2"><span class="who">IA:</span> ¡Perfecto! ¿Y la otra con maduras o verdes?</p>
+          <p class="line step" style="--i:2" data-i18n="t3"><span class="who">Cliente:</span> Verdes. Y un batido de pitahaya grande.</p>
+          <p class="line step ia" style="--i:3" data-i18n="t4"><span class="who">IA:</span> Son $41.71 con impuesto. ¿A nombre de quién?</p>
+          <p class="line step" style="--i:4" data-i18n="t5"><span class="who">Cliente:</span> Marisol.</p>
         </div>
         <div class="print" style="--i:5">
-          <h3>PEDIDO #047</h3>
-          <div class="meta">Marisol · recoge 7:45 p. m.</div>
-          <div class="row"><span>1 x Fritanga (maduras)</span><span>15.99</span></div>
-          <div class="row"><span>1 x Fritanga (verdes)</span><span>15.99</span></div>
-          <div class="row"><span>1 x Batido pitahaya, grande</span><span>7.00</span></div>
-          <div class="row total"><span>Total con impuesto</span><span>$41.71</span></div>
-          <div class="sent">Enviado a la cocina</div>
+          <h3 data-i18n="t6">PEDIDO #047</h3>
+          <div class="meta" data-i18n="t7">Marisol · recoge 7:45 p. m.</div>
+          <div class="row"><span data-i18n="t8">1 x Fritanga (maduras)</span><span>15.99</span></div>
+          <div class="row"><span data-i18n="t9">1 x Fritanga (verdes)</span><span>15.99</span></div>
+          <div class="row"><span data-i18n="t10">1 x Batido pitahaya, grande</span><span>7.00</span></div>
+          <div class="row total"><span data-i18n="t11">Total con impuesto</span><span>$41.71</span></div>
+          <div class="sent" data-i18n="t12">Enviado a la cocina</div>
         </div>
       </div>
     </div>
@@ -209,12 +228,12 @@
 
 <section class="block" id="como">
   <div class="wrap">
-    <h2>Se instala en una visita. Tú no tocas nada técnico.</h2>
-    <p class="lead">Nosotros lo dejamos funcionando. Tu equipo sigue contestando como siempre y la IA atiende las llamadas que hoy se pierden.</p>
+    <h2 data-i18n="howH">Se instala en una visita. Tú no tocas nada técnico.</h2>
+    <p class="lead" data-i18n="howP">Nosotros lo dejamos funcionando. Tu equipo sigue contestando como siempre y la IA atiende las llamadas que hoy se pierden.</p>
     <ol class="steps">
-      <li><b>1</b><h3>Le tomamos foto a tu menú</h3><p>La IA lee los platos y los precios. Revisamos contigo las opciones: tamaños, salsas, maduras o verdes.</p></li>
-      <li><b>2</b><h3>Activamos el desvío de llamadas</h3><p>Cuando nadie contesta, la línea está ocupada o estás cerrado, la llamada pasa a la IA. Tu número no cambia.</p></li>
-      <li><b>3</b><h3>Los pedidos salen en la cocina</h3><p>Aparecen en una tablet con sonido y se imprimen si tienes impresora de tickets. El cliente recibe su confirmación por texto.</p></li>
+      <li><b>1</b><h3 data-i18n="s1h">Le tomamos foto a tu menú</h3><p data-i18n="s1p">La IA lee los platos y los precios. Revisamos contigo las opciones: tamaños, salsas, maduras o verdes.</p></li>
+      <li><b>2</b><h3 data-i18n="s2h">Activamos el desvío de llamadas</h3><p data-i18n="s2p">Cuando nadie contesta, la línea está ocupada o estás cerrado, la llamada pasa a la IA. Tu número no cambia.</p></li>
+      <li><b>3</b><h3 data-i18n="s3h">Los pedidos salen en la cocina</h3><p data-i18n="s3p">Aparecen en una tablet con sonido y se imprimen si tienes impresora de tickets. El cliente recibe su confirmación por texto.</p></li>
     </ol>
   </div>
 </section>
@@ -222,125 +241,240 @@
 <section class="block calc" id="calculadora">
   <div class="wrap grid">
     <div>
-      <h2>¿Cuánto te cuestan las llamadas que nadie contesta?</h2>
-      <p class="lead" style="color:#4b4320;margin-bottom:34px">Mueve los números según tu restaurante. Es una cuenta rápida, no una promesa.</p>
-      <label>Llamadas sin contestar al día <output id="oCalls">6</output>
+      <h2 data-i18n="calcH">¿Cuánto te cuestan las llamadas que nadie contesta?</h2>
+      <p class="lead" style="color:#4b4320;margin-bottom:34px" data-i18n="calcP">Mueve los números según tu restaurante. Es una cuenta rápida, no una promesa.</p>
+      <label><span data-i18n="c1">Llamadas sin contestar al día</span> <output id="oCalls">6</output>
         <input type="range" id="calls" min="1" max="40" value="6" />
-        <span class="help">En hora pico, con la cocina llena o fuera de horario.</span></label>
-      <label>Pedido promedio <output id="oTicket">$25</output>
+        <span class="help" data-i18n="c1h">En hora pico, con la cocina llena o fuera de horario.</span></label>
+      <label><span data-i18n="c2">Pedido promedio</span> <output id="oTicket">$25</output>
         <input type="range" id="ticket" min="8" max="80" value="25" /></label>
-      <label>De esas, cuántas no vuelven a llamar <output id="oLost">50%</output>
+      <label><span data-i18n="c3">De esas, cuántas no vuelven a llamar</span> <output id="oLost">50%</output>
         <input type="range" id="lost" min="10" max="100" step="5" value="50" />
-        <span class="help">Las que llaman a otro restaurante o piden por una app.</span></label>
+        <span class="help" data-i18n="c3h">Las que llaman a otro restaurante o piden por una app.</span></label>
     </div>
     <div class="result" aria-live="polite">
-      <small>Lo que podrías estar dejando de vender al mes</small>
+      <small data-i18n="rTitle">Lo que podrías estar dejando de vender al mes</small>
       <span class="money" id="lostMoney">$2,250</span>
-      <p id="lostOrders">90 pedidos al mes que se van a otro lado.</p>
-      <p class="vs" id="vs">Comanda IA cuesta $199 al mes: se paga sola con 8 pedidos.</p>
+      <p id="lostOrders"></p>
+      <p class="vs" id="vs"></p>
     </div>
   </div>
 </section>
 
 <section class="block does">
   <div class="wrap">
-    <h2>Atiende como tu mejor empleado, sin tomarse el día libre</h2>
-    <p class="lead">Lo diseñamos para restaurantes latinos de Miami: el que llama en spanglish, el que pide rápido, el que pregunta si queda nacatamal.</p>
+    <h2 data-i18n="doesH">Atiende como tu mejor empleado, sin tomarse el día libre</h2>
+    <p class="lead" data-i18n="doesP">Lo diseñamos para restaurantes latinos de Miami: el que llama en spanglish, el que pide rápido, el que pregunta si queda nacatamal.</p>
     <div class="list">
-      <div><h3>Habla español e inglés</h3><p>Cambia de idioma sola si el cliente cambia. Entiende "maduritos", "colada" y "la grande".</p></div>
-      <div><h3>No inventa precios</h3><p>Cada plato, opción y extra sale de tu menú. Si piden algo que no existe, ofrece lo que sí hay.</p></div>
-      <div><h3>Marcas "se acabó" con un toque</h3><p>Si se terminó el vigorón, la IA deja de ofrecerlo en ese momento.</p></div>
-      <div><h3>Pasa la llamada cuando hace falta</h3><p>Reclamos, catering o pedidos grandes van directo al encargado. El cliente también puede marcar 0.</p></div>
-      <div><h3>Chat para ordenar en tu página web</h3><p>El mismo asistente toma pedidos por escrito. Se instala pegando una sola línea en tu página.</p></div>
-      <div><h3>Reporte cada lunes</h3><p>Te llega un mensaje con los clientes atendidos, las ventas, lo más pedido y la hora con más llamadas.</p></div>
+      <div><h3 data-i18n="f1h">Habla español e inglés</h3><p data-i18n="f1p">Cambia de idioma sola si el cliente cambia. Entiende "maduritos", "colada" y "la grande".</p></div>
+      <div><h3 data-i18n="f2h">No inventa precios</h3><p data-i18n="f2p">Cada plato, opción y extra sale de tu menú. Si piden algo que no existe, ofrece lo que sí hay.</p></div>
+      <div><h3 data-i18n="f3h">Marcas "se acabó" con un toque</h3><p data-i18n="f3p">Si se terminó el vigorón, la IA deja de ofrecerlo en ese momento.</p></div>
+      <div><h3 data-i18n="f4h">Pasa la llamada cuando hace falta</h3><p data-i18n="f4p">Reclamos, catering o pedidos grandes van directo al encargado. El cliente también puede marcar 0.</p></div>
+      <div><h3 data-i18n="f5h">Chat para ordenar en tu página web</h3><p data-i18n="f5p">El mismo asistente toma pedidos por escrito. Se instala pegando una sola línea en tu página.</p></div>
+      <div><h3 data-i18n="f6h">Reporte cada lunes</h3><p data-i18n="f6p">Te llega un mensaje con los clientes atendidos, las ventas, lo más pedido y la hora con más llamadas.</p></div>
     </div>
   </div>
 </section>
 
 <section class="block try" id="probar">
   <div class="wrap">
-    <h2>Pruébalo ahora, como si fueras tu cliente</h2>
-    <p class="lead">Es un restaurante de ejemplo con menú latino. Pide lo que quieras: el pedido no se cocina de verdad.</p>
+    <h2 data-i18n="tryH">Pruébalo ahora, como si fueras tu cliente</h2>
+    <p class="lead" data-i18n="tryP">Es un restaurante de ejemplo con menú latino. Pide lo que quieras: el pedido no se cocina de verdad.</p>
     <div class="grid">
       <div class="box" id="callBox">
-        <h3>Llama y haz un pedido</h3>
-        <p>Habla normal, en español o en inglés. Intenta cambiar algo a mitad del pedido.</p>
+        <h3 data-i18n="callH">Llama y haz un pedido</h3>
+        <p id="callP"></p>
         <a class="tel" id="demoTel" href="#">(305) 000-0000</a>
       </div>
       <div class="box">
-        <h3>Escríbele por el chat</h3>
-        <p>Así lo verían tus clientes en tu página web. Toca el botón y pide algo.</p>
-        <a class="btn dark" href="#" data-open-chat>Abrir el chat</a>
+        <h3 data-i18n="chatH">Escríbele por el chat</h3>
+        <p data-i18n="chatP">Así lo verían tus clientes en tu página web. Toca el botón y pide algo.</p>
+        <a class="btn dark" href="#" data-open-chat data-i18n="chatBtn">Abrir el chat</a>
       </div>
     </div>
   </div>
 </section>
 
 <section class="block" id="precios" style="padding-top:0">
-  <div class="wrap">
-    <h2>Un precio al mes. Sin contrato.</h2>
-    <p class="lead">La instalación está incluida. Si no te sirve, cancelas cuando quieras.</p>
+  <div class="wrap split">
+    <div class="side">
+      <h2 data-i18n="priceH">Un precio al mes. Sin contrato.</h2>
+      <p class="lead" data-i18n="priceP">La instalación está incluida. Si no te sirve, cancelas cuando quieras.</p>
+      <p class="small" data-i18n="priceSmall">Incluye las llamadas normales de un restaurante. Si recibes muchísimas, te avisamos antes de cobrar cualquier extra.</p>
+    </div>
     <div class="prices">
       <div class="price">
-        <h3>Teléfono</h3>
-        <div class="amt">$149<span> /mes</span></div>
+        <h3 data-i18n="p1">Teléfono</h3>
+        <div class="amt">$149<span data-i18n="mo"> /mes</span></div>
         <ul>
-          <li>Contesta llamadas 24/7 <i>sí</i></li>
-          <li>Español e inglés <i>sí</i></li>
-          <li>Pantalla de cocina <i>sí</i></li>
-          <li>Editor de menú <i>sí</i></li>
-          <li>Chat en tu página web <i>—</i></li>
-          <li>Reporte de los lunes <i>—</i></li>
+          <li><span data-i18n="l1">Contesta llamadas 24/7</span> <i data-i18n="yes">sí</i></li>
+          <li><span data-i18n="l2">Español e inglés</span> <i data-i18n="yes">sí</i></li>
+          <li><span data-i18n="l3">Pantalla de cocina</span> <i data-i18n="yes">sí</i></li>
+          <li><span data-i18n="l4">Editor de menú</span> <i data-i18n="yes">sí</i></li>
+          <li><span data-i18n="l5">Chat en tu página web</span> <i>—</i></li>
+          <li><span data-i18n="l6">Reporte de los lunes</span> <i>—</i></li>
         </ul>
-        <a class="btn dark" href="#agendar">Agendar instalación</a>
+        <a class="btn dark" href="#agendar" data-i18n="book">Agendar instalación</a>
       </div>
       <div class="price pro">
-        <h3>Teléfono + Web</h3>
-        <div class="amt">$199<span> /mes</span></div>
+        <h3 data-i18n="p2">Teléfono + Web</h3>
+        <div class="amt">$199<span data-i18n="mo"> /mes</span></div>
         <ul>
-          <li>Contesta llamadas 24/7 <i>sí</i></li>
-          <li>Español e inglés <i>sí</i></li>
-          <li>Pantalla de cocina <i>sí</i></li>
-          <li>Editor de menú <i>sí</i></li>
-          <li>Chat en tu página web <i>sí</i></li>
-          <li>Reporte de los lunes <i>sí</i></li>
+          <li><span data-i18n="l1">Contesta llamadas 24/7</span> <i data-i18n="yes">sí</i></li>
+          <li><span data-i18n="l2">Español e inglés</span> <i data-i18n="yes">sí</i></li>
+          <li><span data-i18n="l3">Pantalla de cocina</span> <i data-i18n="yes">sí</i></li>
+          <li><span data-i18n="l4">Editor de menú</span> <i data-i18n="yes">sí</i></li>
+          <li><span data-i18n="l5">Chat en tu página web</span> <i data-i18n="yes">sí</i></li>
+          <li><span data-i18n="l6">Reporte de los lunes</span> <i data-i18n="yes">sí</i></li>
         </ul>
-        <a class="btn yellow" href="#agendar">Agendar instalación</a>
+        <a class="btn yellow" href="#agendar" data-i18n="book">Agendar instalación</a>
       </div>
     </div>
-    <p class="small">Incluye las llamadas normales de un restaurante. Si recibes muchísimas, te avisamos antes de cobrar cualquier extra.</p>
   </div>
 </section>
 
 <section class="block faq" style="padding-top:0">
-  <div class="wrap">
-    <h2>Lo que nos preguntan los dueños</h2>
-    <details><summary>¿Tengo que cambiar mi número de teléfono?</summary><p>No. Tus clientes siguen llamando al mismo número. Activamos un desvío para que, cuando nadie contesta o la línea está ocupada, la llamada pase al asistente.</p></details>
-    <details><summary>¿Y si la IA no entiende al cliente?</summary><p>Lo intenta dos veces con naturalidad. Si sigue sin entender, pasa la llamada a tu encargado. El cliente también puede marcar 0 en cualquier momento.</p></details>
-    <details><summary>¿Puede equivocarse en un precio?</summary><p>No puede inventarlos: el sistema revisa cada plato, opción y extra contra tu menú antes de agregarlo. Antes de enviar el pedido, la IA le repite al cliente todo y el total.</p></details>
-    <details><summary>¿Qué pasa si se acaba un plato?</summary><p>Lo marcas como "se acabó" desde la tablet de la cocina o desde tu celular. La IA deja de ofrecerlo en la siguiente llamada.</p></details>
-    <details><summary>¿Necesito comprar algo?</summary><p>Solo una tablet o un celular viejo para la cocina, con WiFi. La impresora de tickets es opcional.</p></details>
-    <details><summary>¿Puedo ver lo que la IA habló con mis clientes?</summary><p>Sí. En tu panel ves cada llamada y cada chat palabra por palabra, junto con los pedidos y las ventas.</p></details>
+  <div class="wrap split">
+    <div class="side"><h2 data-i18n="faqH">Lo que nos preguntan los dueños</h2></div>
+    <div>
+      <details><summary data-i18n="q1">¿Tengo que cambiar mi número de teléfono?</summary><p data-i18n="a1">No. Tus clientes siguen llamando al mismo número. Activamos un desvío para que, cuando nadie contesta o la línea está ocupada, la llamada pase al asistente.</p></details>
+      <details><summary data-i18n="q2">¿Y si la IA no entiende al cliente?</summary><p data-i18n="a2">Lo intenta dos veces con naturalidad. Si sigue sin entender, pasa la llamada a tu encargado. El cliente también puede marcar 0 en cualquier momento.</p></details>
+      <details><summary data-i18n="q3">¿Puede equivocarse en un precio?</summary><p data-i18n="a3">No puede inventarlos: el sistema revisa cada plato, opción y extra contra tu menú antes de agregarlo. Antes de enviar el pedido, la IA le repite al cliente todo y el total.</p></details>
+      <details><summary data-i18n="q4">¿Qué pasa si se acaba un plato?</summary><p data-i18n="a4">Lo marcas como "se acabó" desde la tablet de la cocina o desde tu celular. La IA deja de ofrecerlo en la siguiente llamada.</p></details>
+      <details><summary data-i18n="q5">¿Necesito comprar algo?</summary><p data-i18n="a5">Solo una tablet o un celular viejo para la cocina, con WiFi. La impresora de tickets es opcional.</p></details>
+      <details><summary data-i18n="q6">¿Puedo ver lo que la IA habló con mis clientes?</summary><p data-i18n="a6">Sí. En tu panel ves cada llamada y cada chat palabra por palabra, junto con los pedidos y las ventas.</p></details>
+    </div>
   </div>
 </section>
 
 <section class="end" id="agendar">
   <div class="wrap">
-    <h2>Deja de perder pedidos por teléfono.</h2>
-    <p>Escríbenos y vamos a tu restaurante a instalarlo. En la misma visita lo pruebas con tu propio menú.</p>
+    <div>
+      <h2 data-i18n="endH">Deja de perder pedidos por teléfono.</h2>
+      <p data-i18n="endP">Escríbenos y vamos a tu restaurante a instalarlo. En la misma visita lo pruebas con tu propio menú.</p>
+    </div>
     <div class="ctas" id="contact">
-      <a class="btn yellow" id="cWhats" hidden target="_blank" rel="noopener">Escribir por WhatsApp</a>
-      <a class="btn ghost" id="cPhone" hidden>Llamar</a>
-      <a class="btn ghost" id="cEmail" hidden>Enviar correo</a>
+      <a class="btn yellow" id="cWhats" hidden target="_blank" rel="noopener" data-i18n="cW">Escribir por WhatsApp</a>
+      <a class="btn ghost" id="cPhone" hidden></a>
+      <a class="btn ghost" id="cEmail" hidden data-i18n="cE">Enviar correo</a>
     </div>
   </div>
 </section>
 
-<footer><div class="wrap"><span>Comanda IA · Hecho en Miami por MADEVHUB</span><a href="/pedidos.html">Entrar al panel</a></div></footer>
+<footer><div class="wrap"><span data-i18n="foot">Comanda IA · Hecho en Miami por MADEVHUB</span><a href="/pedidos.html" data-i18n="panel">Entrar al panel</a></div></footer>
 
 <script>
-  // ── Calculadora ──
+  // ── Textos en inglés. El español está escrito directamente en la página. ──
+  const EN = {
+    nav1: 'How it works', nav2: 'Calculator', nav3: 'Try it', nav4: 'Pricing',
+    h1: 'Your restaurant answers every call.<small>Even on a Friday at 8 with a full kitchen.</small>',
+    heroP: 'An AI assistant that answers your phone in English and Spanish, takes the complete order without making up prices, and sends it straight to the kitchen.',
+    tryChat: 'Try the chat',
+    heroFine: 'You keep your current number. We set it up at your restaurant in one visit.',
+    t1: '<span class="who">Customer:</span> Hi, can I get two fritangas to go? One with sweet plantains.',
+    t2: '<span class="who">AI:</span> Sure! And the other one, sweet or green plantains?',
+    t3: '<span class="who">Customer:</span> Green. And a large pitahaya smoothie.',
+    t4: '<span class="who">AI:</span> That\'s $41.71 with tax. What name is it under?',
+    t5: '<span class="who">Customer:</span> Marisol.',
+    t6: 'ORDER #047', t7: 'Marisol · pickup 7:45 PM',
+    t8: '1 x Fritanga (sweet)', t9: '1 x Fritanga (green)', t10: '1 x Pitahaya smoothie, large',
+    t11: 'Total with tax', t12: 'Sent to the kitchen',
+    howH: 'Set up in one visit. You don\'t touch anything technical.',
+    howP: 'We get it running for you. Your staff keeps answering like always, and the AI picks up the calls you\'re missing today.',
+    s1h: 'We take a photo of your menu', s1p: 'The AI reads the dishes and prices. We go over the options with you: sizes, sauces, sweet or green plantains.',
+    s2h: 'We turn on call forwarding', s2p: 'When nobody answers, the line is busy, or you\'re closed, the call goes to the AI. Your number stays the same.',
+    s3h: 'Orders show up in the kitchen', s3p: 'They appear on a tablet with a sound alert and print if you have a receipt printer. The customer gets a text confirmation.',
+    calcH: 'How much are unanswered calls costing you?',
+    calcP: 'Move the numbers to match your restaurant. It\'s a quick estimate, not a promise.',
+    c1: 'Unanswered calls per day', c1h: 'During rush hour, with a full kitchen, or after hours.',
+    c2: 'Average order', c3: 'How many of those never call back', c3h: 'The ones who call another restaurant or order on an app.',
+    rTitle: 'What you could be missing out on every month',
+    doesH: 'Answers like your best employee, without taking a day off',
+    doesP: 'Built for Latin restaurants in Miami: the caller who speaks Spanglish, the one who orders fast, the one who asks if there\'s any nacatamal left.',
+    f1h: 'Speaks English and Spanish', f1p: 'Switches languages on its own when the customer does. Understands "maduritos", "colada" and "la grande".',
+    f2h: 'Never makes up prices', f2p: 'Every dish, option and extra comes from your menu. If someone asks for something you don\'t have, it offers what you do.',
+    f3h: 'Mark "sold out" with one tap', f3p: 'If you run out of vigorón, the AI stops offering it right away.',
+    f4h: 'Transfers the call when needed', f4p: 'Complaints, catering or large orders go straight to your manager. Customers can also press 0.',
+    f5h: 'Ordering chat on your website', f5p: 'The same assistant takes written orders. You install it by pasting a single line into your site.',
+    f6h: 'Report every Monday', f6p: 'You get a text with customers served, sales, top sellers and your busiest hour.',
+    tryH: 'Try it now, as if you were your customer',
+    tryP: 'It\'s a sample restaurant with a Latin menu. Order whatever you want: nothing actually gets cooked.',
+    callH: 'Call and place an order', chatH: 'Message the chat',
+    chatP: 'This is how your customers would see it on your website. Tap the button and order something.',
+    chatBtn: 'Open the chat',
+    priceH: 'One monthly price. No contract.',
+    priceP: 'Setup is included. If it doesn\'t work for you, cancel anytime.',
+    priceSmall: 'Includes the normal call volume of a restaurant. If you get a huge amount, we\'ll let you know before charging anything extra.',
+    p1: 'Phone', p2: 'Phone + Web', mo: ' /mo', yes: 'yes',
+    l1: 'Answers calls 24/7', l2: 'English and Spanish', l3: 'Kitchen screen', l4: 'Menu editor', l5: 'Chat on your website', l6: 'Monday report',
+    book: 'Book your setup',
+    faqH: 'What restaurant owners ask us',
+    q1: 'Do I have to change my phone number?', a1: 'No. Your customers keep calling the same number. We set up forwarding so that when nobody answers or the line is busy, the call goes to the assistant.',
+    q2: 'What if the AI doesn\'t understand the customer?', a2: 'It tries twice, naturally. If it still doesn\'t understand, it transfers the call to your manager. Customers can also press 0 at any time.',
+    q3: 'Can it get a price wrong?', a3: 'It can\'t make prices up: the system checks every dish, option and extra against your menu before adding it. Before sending the order, the AI reads everything back with the total.',
+    q4: 'What if we run out of a dish?', a4: 'Mark it as "sold out" from the kitchen tablet or your phone. The AI stops offering it on the next call.',
+    q5: 'Do I need to buy anything?', a5: 'Just a tablet or an old phone for the kitchen, with WiFi. A receipt printer is optional.',
+    q6: 'Can I see what the AI said to my customers?', a6: 'Yes. Your dashboard shows every call and chat word for word, along with orders and sales.',
+    endH: 'Stop losing orders over the phone.',
+    endP: 'Message us and we\'ll come to your restaurant to set it up. You\'ll try it with your own menu during the same visit.',
+    cW: 'Message us on WhatsApp', cE: 'Send an email',
+    foot: 'Comanda IA · Made in Miami by MADEVHUB', panel: 'Log in to dashboard',
+  };
+  // Textos que cambian (con números o datos del .env)
+  const DYN = {
+    es: {
+      title: 'Comanda IA · Tu restaurante contesta todas las llamadas',
+      orders: (n) => `${n} pedidos al mes que se van a otro lado.`,
+      vs: (p, n) => `Comanda IA cuesta $${p} al mes: se paga sola con ${n} pedido${n === 1 ? '' : 's'}.`,
+      listen: 'Escuchar cómo contesta', callDemo: 'Llamar a la demo: ',
+      callP: 'Habla normal, en español o en inglés. Intenta cambiar algo a mitad del pedido.',
+      callSoon: 'La línea de demostración estará disponible muy pronto. Mientras tanto, prueba el chat: usa el mismo asistente.',
+      callUs: 'Llamar al ', wa: 'Hola, quiero instalar Comanda IA en mi restaurante.', mailSubj: 'Instalar Comanda IA',
+      noContact: 'Configura CONTACT_WHATSAPP, CONTACT_PHONE o CONTACT_EMAIL en el archivo .env para mostrar aquí cómo contactarte. (Este aviso solo se ve en tu computadora.)',
+      chatLabel: 'Probar el chat',
+    },
+    en: {
+      title: 'Comanda IA · Your restaurant answers every call',
+      orders: (n) => `${n} orders a month going somewhere else.`,
+      vs: (p, n) => `Comanda IA costs $${p} a month: it pays for itself with ${n} order${n === 1 ? '' : 's'}.`,
+      listen: 'Hear how it answers', callDemo: 'Call the demo: ',
+      callP: 'Talk normally, in English or Spanish. Try changing something halfway through the order.',
+      callSoon: 'The demo line will be available very soon. In the meantime, try the chat: it uses the same assistant.',
+      callUs: 'Call ', wa: 'Hi, I want to set up Comanda IA at my restaurant.', mailSubj: 'Set up Comanda IA',
+      noContact: 'Set CONTACT_WHATSAPP, CONTACT_PHONE or CONTACT_EMAIL in your .env file to show your contact info here. (Only visible on your computer.)',
+      chatLabel: 'Try the chat',
+    },
+  };
+
   const $ = (id) => document.getElementById(id);
+  const nodes = [...document.querySelectorAll('[data-i18n]')];
+  const ES = {};
+  nodes.forEach((n) => { ES[n.dataset.i18n] ??= n.innerHTML; });
+
+  const params = new URLSearchParams(location.search);
+  let lang = params.get('lang');
+  if (!['es', 'en'].includes(lang)) {
+    try { lang = localStorage.getItem('comanda-lang'); } catch { lang = null; }
+  }
+  if (!['es', 'en'].includes(lang)) lang = 'es';
+  const T = () => DYN[lang];
+
+  let config = null;
+
+  function applyLang(next, { reloadChat = true } = {}) {
+    lang = next;
+    try { localStorage.setItem('comanda-lang', lang); } catch { /* sin almacenamiento */ }
+    document.documentElement.lang = lang;
+    document.title = T().title;
+    const dict = lang === 'en' ? EN : ES;
+    nodes.forEach((n) => { const v = dict[n.dataset.i18n]; if (v != null) n.innerHTML = v; });
+    document.querySelectorAll('.lang button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
+    calc();
+    renderContact();
+    if (reloadChat) loadChat();
+  }
+
+  // ── Calculadora ──
   const fmt = (n) => '$' + Math.round(n).toLocaleString('en-US');
   const PRICE = 199;
   function calc() {
@@ -349,50 +483,77 @@
     $('oTicket').textContent = '$' + ticket;
     $('oLost').textContent = Math.round(lost * 100) + '%';
     const orders = Math.round(calls * 30 * lost);
-    const money = orders * ticket;
-    $('lostMoney').textContent = fmt(money);
-    $('lostOrders').textContent = `${orders} pedidos al mes que se van a otro lado.`;
-    const needed = Math.ceil(PRICE / ticket);
-    $('vs').textContent = `Comanda IA cuesta $${PRICE} al mes: se paga sola con ${needed} pedido${needed === 1 ? '' : 's'}.`;
+    $('lostMoney').textContent = fmt(orders * ticket);
+    $('lostOrders').textContent = T().orders(orders);
+    $('vs').textContent = T().vs(PRICE, Math.ceil(PRICE / ticket));
   }
   ['calls', 'ticket', 'lost'].forEach((id) => $(id).addEventListener('input', calc));
-  calc();
 
   // ── Datos de contacto y demo (se configuran en .env) ──
   const telHref = (n) => 'tel:' + n.replace(/[^\d+]/g, '');
   const pretty = (n) => { const d = n.replace(/\D/g, '').slice(-10); return d.length === 10 ? `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}` : n; };
-  fetch('/api/publico/config').then((r) => r.json()).then((c) => {
+  function renderContact() {
+    const c = config || {};
     if (c.demo_telefono) {
       $('demoTel').textContent = pretty(c.demo_telefono);
       $('demoTel').href = telHref(c.demo_telefono);
+      $('demoTel').hidden = false;
       $('heroCall').href = telHref(c.demo_telefono);
-      $('heroCallText').textContent = 'Llamar a la demo: ' + pretty(c.demo_telefono);
+      $('heroCallText').textContent = T().callDemo + pretty(c.demo_telefono);
+      $('callP').textContent = T().callP;
     } else {
-      $('callBox').querySelector('p').textContent = 'La línea de demostración estará disponible muy pronto. Mientras tanto, prueba el chat: usa el mismo asistente.';
-      $('demoTel').hidden = true;
+      $('heroCallText').textContent = T().listen;
+      $('callP').textContent = config ? T().callSoon : T().callP;
+      if (config) $('demoTel').hidden = true;
     }
-    if (c.contacto_whatsapp) { $('cWhats').href = 'https://wa.me/' + c.contacto_whatsapp.replace(/\D/g, '') + '?text=' + encodeURIComponent('Hola, quiero instalar Comanda IA en mi restaurante.'); $('cWhats').hidden = false; }
-    if (c.contacto_telefono) { $('cPhone').href = telHref(c.contacto_telefono); $('cPhone').textContent = 'Llamar al ' + pretty(c.contacto_telefono); $('cPhone').hidden = false; }
-    if (c.contacto_email) { $('cEmail').href = 'mailto:' + c.contacto_email + '?subject=' + encodeURIComponent('Instalar Comanda IA'); $('cEmail').hidden = false; }
-    if (!c.contacto_whatsapp && !c.contacto_telefono && !c.contacto_email && ['localhost', '127.0.0.1'].includes(location.hostname)) {
-      $('contact').innerHTML = '<p style="opacity:.8">Configura CONTACT_WHATSAPP, CONTACT_PHONE o CONTACT_EMAIL en el archivo .env para mostrar aquí cómo contactarte. (Este aviso solo se ve en tu computadora.)</p>';
+    if (c.contacto_whatsapp) { $('cWhats').href = 'https://wa.me/' + c.contacto_whatsapp.replace(/\D/g, '') + '?text=' + encodeURIComponent(T().wa); $('cWhats').hidden = false; }
+    if (c.contacto_telefono) { $('cPhone').href = telHref(c.contacto_telefono); $('cPhone').textContent = T().callUs + pretty(c.contacto_telefono); $('cPhone').hidden = false; }
+    if (c.contacto_email) { $('cEmail').href = 'mailto:' + c.contacto_email + '?subject=' + encodeURIComponent(T().mailSubj); $('cEmail').hidden = false; }
+    let note = $('noContact');
+    const missing = config && !c.contacto_whatsapp && !c.contacto_telefono && !c.contacto_email && ['localhost', '127.0.0.1'].includes(location.hostname);
+    if (missing) {
+      if (!note) { note = document.createElement('p'); note.id = 'noContact'; note.style.opacity = '.8'; $('contact').appendChild(note); }
+      note.textContent = T().noContact;
     }
+  }
 
-    // El chat de la demo, instalado igual que en la página de un restaurante
+  // ── Chat de la demo, instalado igual que en la página de un restaurante ──
+  function loadChat() {
+    if (!config) return;
+    document.querySelectorAll('[data-comanda-host]').forEach((h) => h.remove());
+    [...document.body.children].filter((el) => el.shadowRoot).forEach((h) => h.remove());
+    document.querySelectorAll('script[data-restaurante]').forEach((x) => x.remove());
+    window.__comandaIA = false;
     const s = document.createElement('script');
     s.src = '/widget.js';
-    s.dataset.restaurante = c.demo_restaurante;
-    s.dataset.texto = 'Probar el chat';
+    s.dataset.restaurante = config.demo_restaurante;
+    s.dataset.texto = T().chatLabel;
     s.dataset.color = '#c43d24';
+    s.dataset.lang = lang;
     s.async = true;
     document.body.appendChild(s);
-  });
+  }
+
+  document.querySelectorAll('.lang button').forEach((b) => b.addEventListener('click', () => {
+    if (b.dataset.lang === lang) return;
+    applyLang(b.dataset.lang);
+    const u = new URL(location.href);
+    u.searchParams.set('lang', lang);
+    history.replaceState(null, '', u);
+  }));
 
   document.querySelectorAll('[data-open-chat]').forEach((a) => a.addEventListener('click', (e) => {
     e.preventDefault();
     const host = [...document.body.children].find((el) => el.shadowRoot);
     host?.shadowRoot.querySelector('.launch')?.click();
   }));
+
+  applyLang(lang, { reloadChat: false });
+  fetch('/api/publico/config').then((r) => r.json()).then((c) => {
+    config = c;
+    renderContact();
+    loadChat();
+  });
 </script>
 </body>
 </html>
